@@ -1,7 +1,7 @@
 <!-- 
     PROJECT: DermoDefense (Final Master Edition)
     AUTHOR: Ruben Oltean
-    AUDIO: Procedural Audio Engine v2.0 (Full UI Integration)
+    AUDIO: Procedural Audio Engine v2.2 (Phasic Logic Fixed)
     DATE: 2026
 -->
 
@@ -950,7 +950,7 @@
     <script>
         /**
          * =========================================================================
-         * AUDIO SYSTEM v2.0 (Procedural Synthesis Module + Full UI Integration)
+         * AUDIO SYSTEM v2.2 (Procedural Synthesis Module + Full UI Integration)
          * Author: Audio Expert & Senior Programmer
          * Description: Generates sound effects in real-time using Web Audio API.
          * =========================================================================
@@ -1778,11 +1778,15 @@
             };
             const endStim = (e) => { 
                 e.preventDefault(); 
-                isStimulating = false; 
-                burstFrames = 20; 
-                btn.style.background = ""; 
-                btn.style.color = "#fff"; 
-                AudioSys.stopStimulusHum(); // Stop Hum
+                // Only trigger the "Off" burst if we were actually holding the button
+                if (isStimulating) {
+                    burstFrames = 20; // Fire the "off" signal (Phasic)
+                    AudioSys.stopStimulusHum();
+                    if(type === 'pressure' || type === 'touch') AudioSys.playShoot(type); // Sound for release
+                }
+                isStimulating = false;
+                btn.style.background = "";
+                btn.style.color = "#fff";
             };
             
             btn.onmousedown = startStim; 
@@ -1811,6 +1815,10 @@
                             triggerSound = true; 
                         }
                         burstFrames--; 
+                    }
+                    // Add tiny noise while holding to show it's "alive"
+                    if (isStimulating && Math.random() > 0.9) {
+                        signal = - (Math.random() * 20);
                     }
                 } else if (type === 'heat' || type === 'cold') {
                     if (isStimulating) { 
