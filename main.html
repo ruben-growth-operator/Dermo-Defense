@@ -1,0 +1,1501 @@
+<!-- 
+    PROJECT: DermoDefense (Final Edition)
+    AUTHOR: Ruben Oltean
+    DATE: 2026
+    DESC: Biology tower defense game. Don't touch the logic, it works! 
+-->
+
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DermoDefense: Ediția Finală</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           1. CSS VARIABLES & THEME
+           ========================================= */
+        :root {
+            --bg-dark: #020408;
+            --ui-glass: rgba(11, 17, 32, 0.98);
+            --ui-border: rgba(56, 189, 248, 0.4);
+            
+            /* Accents */
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-red: #ef4444;
+            --accent-gold: #f59e0b;
+            
+            /* Typography */
+            --text-main: #f1f5f9;
+            --font-main: 'Exo 2', sans-serif;
+            --font-tech: 'Share Tech Mono', monospace;
+        }
+
+        /* --- MATRIX MODE (EASTER EGG) --- */
+        body.matrix-mode {
+            --bg-dark: #000000;
+            --ui-glass: rgba(0, 20, 0, 0.95);
+            --ui-border: #00ff00;
+            --accent-blue: #00ff00;
+            --accent-green: #00ff00;
+            --accent-red: #00ff00;
+            --accent-gold: #00ff00;
+            --text-main: #00ff00;
+        }
+
+        /* =========================================
+           2. GLOBAL RESET & BODY
+           ========================================= */
+        * { 
+            box-sizing: border-box; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        body {
+            margin: 0; 
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.5s;
+        }
+
+        /* =========================================
+           3. BACKGROUND FX & SCANLINES
+           ========================================= */
+        .scanlines {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none; 
+            z-index: 900; 
+            opacity: 0.3;
+        }
+        
+        .grid-bg {
+            position: fixed; 
+            width: 200%; 
+            height: 200%; 
+            top: -50%; 
+            left: -50%;
+            background-image: 
+                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(20deg);
+            z-index: 0; 
+            pointer-events: none;
+        }
+
+        body.matrix-mode .grid-bg { 
+            background-image: linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px); 
+        }
+
+        #watermark {
+            position: fixed; 
+            bottom: 8px; 
+            right: 10px;
+            font-family: var(--font-tech); 
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.2); 
+            z-index: 1000; 
+            pointer-events: auto; 
+            cursor: pointer;
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            transition: opacity 0.5s;
+        }
+
+        /* =========================================
+           4. UI COMPONENTS (Toast, HUD)
+           ========================================= */
+        #toast {
+            position: fixed; 
+            top: 100px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9); 
+            border: 2px solid var(--accent-gold);
+            color: var(--accent-gold); 
+            padding: 15px 30px; 
+            font-family: var(--font-tech);
+            font-size: 1.2rem; 
+            z-index: 2000; 
+            pointer-events: none; 
+            opacity: 0; 
+            transition: opacity 0.3s;
+            text-align: center; 
+            box-shadow: 0 0 20px var(--accent-gold);
+        }
+
+        #hud {
+            height: 80px; 
+            background: rgba(8, 12, 24, 0.98);
+            border-bottom: 2px solid var(--ui-border);
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 0 15px; 
+            z-index: 20;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            flex-shrink: 0;
+        }
+
+        body.matrix-mode #hud { 
+            background: #000; 
+            border-bottom: 1px solid #0f0; 
+            box-shadow: none; 
+        }
+
+        .hud-group { 
+            display: flex; 
+            flex-direction: column; 
+            min-width: 70px; 
+        }
+
+        .hud-label { 
+            font-family: var(--font-tech); 
+            font-size: 0.65rem; 
+            color: #64748b; 
+            letter-spacing: 1px; 
+        }
+
+        body.matrix-mode .hud-label { 
+            color: #005500; 
+        }
+        
+        #score-display { 
+            font-family: var(--font-tech); 
+            font-size: 1.6rem; 
+            color: var(--accent-blue); 
+            text-shadow: 0 0 10px rgba(56,189,248,0.4); 
+        }
+
+        #level-display { 
+            font-family: var(--font-tech); 
+            font-size: 1rem; 
+            color: var(--accent-green); 
+        }
+
+        /* Health Bar */
+        .health-track {
+            width: 120px; 
+            height: 10px; 
+            background: #1e293b;
+            border: 1px solid #475569; 
+            border-radius: 2px;
+            margin-top: 5px; 
+            overflow: hidden; 
+            position: relative;
+        }
+
+        body.matrix-mode .health-track { 
+            background: #001100; 
+            border-color: #004400; 
+        }
+
+        #health-fill {
+            width: 100%; 
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+            transition: width 0.3s ease-out, background 0.3s;
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        .pause-btn {
+            background: transparent; 
+            border: 1px solid var(--ui-border); 
+            color: var(--accent-blue);
+            width: 45px; 
+            height: 45px; 
+            border-radius: 4px; 
+            font-size: 1.2rem; 
+            cursor: pointer;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-right: 15px;
+        }
+
+        /* =========================================
+           5. GAMEPLAY AREA & LAYERS
+           ========================================= */
+        #game-area { 
+            flex-grow: 1; 
+            position: relative; 
+            z-index: 5; 
+            overflow: hidden; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 50%, rgba(255, 219, 172, 0.05) 100%);
+        }
+
+        body.matrix-mode #game-area { 
+            background: #000; 
+        }
+
+        .layer {
+            position: absolute; 
+            width: 100%; 
+            left: 0;
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-end; 
+            padding-right: 20px;
+            font-weight: 700; 
+            font-size: 0.7rem; 
+            color: rgba(0,0,0,0.5); 
+            letter-spacing: 1px; 
+            text-transform: uppercase;
+            transition: all 0.5s;
+        }
+        
+        /* Specific Skin Layers */
+        #epidermis { 
+            bottom: 20%; 
+            height: 8%; 
+            background: #dcb090; 
+            border-top: 4px solid #a67c52;
+            z-index: 3; 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+        }
+
+        #dermis { 
+            bottom: 12%; 
+            height: 8%; 
+            background: #cd8c70;
+            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 5px);
+            z-index: 2; 
+        }
+
+        #hypodermis { 
+            bottom: 0; 
+            height: 12%; 
+            background: #eab308;
+            background-image: radial-gradient(circle, #facc15 2px, transparent 2.5px); 
+            background-size: 8px 8px;
+            z-index: 1; 
+        }
+
+        /* Matrix Override for Layers */
+        body.matrix-mode .layer { 
+            background: transparent !important; 
+            border: 1px solid #0f0; 
+            box-shadow: inset 0 0 20px rgba(0,255,0,0.2); 
+            color: #0f0; 
+        }
+
+        .layer-tag {
+            background: rgba(255,255,255,0.2); 
+            padding: 2px 5px; 
+            border-radius: 2px;
+            color: #333; 
+            font-size: 0.55rem; 
+            font-family: var(--font-tech); 
+            text-shadow: none;
+        }
+
+        body.matrix-mode .layer-tag { 
+            background: #000; 
+            color: #0f0; 
+            border: 1px solid #0f0; 
+        }
+
+        /* Enemies / Threats */
+        .threat {
+            position: absolute; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 45px; 
+            height: 45px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 1.8rem; 
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 50%;
+            box-shadow: 0 0 15px currentColor; 
+            border: 1px solid rgba(255,255,255,0.4);
+            backdrop-filter: blur(2px);
+        }
+
+        .threat-heavy { 
+            border: 2px solid #fff; 
+            box-shadow: 0 0 25px currentColor; 
+            width: 55px; 
+            height: 55px; 
+            font-size: 2.2rem; 
+        }
+
+        .threat-light { 
+            opacity: 0.9; 
+            width: 35px; 
+            height: 35px; 
+            font-size: 1.4rem; 
+        }
+
+        .particle {
+            position: absolute; 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%;
+            pointer-events: none; 
+            z-index: 15;
+        }
+
+        /* =========================================
+           6. CONTROLS PANEL
+           ========================================= */
+        #controls {
+            height: 35vh; 
+            background: rgba(11, 17, 32, 0.98);
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 10px; 
+            padding: 15px; 
+            border-top: 1px solid var(--ui-border); 
+            z-index: 30;
+            flex-shrink: 0; 
+            transition: opacity 0.2s, filter 0.2s;
+        }
+
+        body.matrix-mode #controls { 
+            background: #000; 
+            border-top: 1px solid #0f0; 
+        }
+        
+        #controls.jammed {
+            opacity: 0.5; 
+            pointer-events: none;
+            filter: grayscale(100%) sepia(100%) hue-rotate(-50deg) saturate(300%);
+            position: relative;
+        }
+
+        #controls.jammed::after {
+            content: "⚠️ OBOSEALĂ SINAPTICĂ";
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            color: #fff; 
+            font-family: var(--font-tech); 
+            font-weight: bold; 
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.8); 
+            padding: 10px 20px; 
+            border: 1px solid red; 
+            pointer-events: none;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid #334155; 
+            border-radius: 8px; 
+            color: var(--text-main);
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            position: relative; 
+            overflow: hidden; 
+            transition: all 0.1s;
+        }
+
+        body.matrix-mode .btn { 
+            background: #000; 
+            border: 1px solid #0f0; 
+            color: #0f0; 
+        }
+
+        .btn:active, .btn.pressed { 
+            transform: scale(0.97); 
+            border-color: var(--accent-blue); 
+            background: #253346; 
+        }
+
+        .btn-title { 
+            font-family: var(--font-tech); 
+            font-size: 1.1rem; 
+            letter-spacing: 1px; 
+            font-weight: bold; 
+        }
+
+        .btn-desc { 
+            font-size: 0.75rem; 
+            color: #94a3b8; 
+            margin-top: 4px; 
+        }
+
+        body.matrix-mode .btn-desc { 
+            color: #005500; 
+        }
+
+        .accent-bar { 
+            width: 40%; 
+            height: 4px; 
+            margin-top: 8px; 
+            box-shadow: 0 0 8px currentColor; 
+            border-radius: 2px; 
+        }
+        
+        .key-hint {
+            position: absolute; 
+            top: 5px; 
+            left: 8px; 
+            font-family: var(--font-tech); 
+            font-size: 0.7rem; 
+            color: #555;
+            border: 1px solid #333; 
+            padding: 0 4px; 
+            border-radius: 3px; 
+            background: rgba(0,0,0,0.5);
+        }
+
+        body.matrix-mode .key-hint { 
+            color: #0f0; 
+            border-color: #0f0; 
+        }
+
+        /* =========================================
+           7. OVERLAYS & MENUS
+           ========================================= */
+        .overlay {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(5, 9, 20, 0.96); 
+            backdrop-filter: blur(8px);
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            z-index: 100; 
+            padding: 20px; 
+            text-align: center; 
+            transition: opacity 0.3s;
+        }
+        
+        .hero-title {
+            font-size: 2.5rem; 
+            color: var(--accent-blue); 
+            font-family: var(--font-tech);
+            text-shadow: 0 0 20px rgba(56,189,248,0.6); 
+            margin: 0;
+            border-bottom: 2px solid var(--accent-blue); 
+            padding-bottom: 10px; 
+            margin-bottom: 20px;
+        }
+        
+        .menu-btn {
+            margin-top: 12px; 
+            padding: 15px 0; 
+            font-size: 1.1rem;
+            background: transparent; 
+            border: 1px solid var(--accent-blue); 
+            color: var(--accent-blue);
+            font-family: var(--font-tech); 
+            cursor: pointer; 
+            border-radius: 2px; 
+            width: 240px; 
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover { 
+            background: rgba(56,189,248,0.1); 
+            color: #fff; 
+            letter-spacing: 2px; 
+        }
+
+        .btn-primary { 
+            background: var(--accent-blue); 
+            color: #000; 
+            font-weight: bold; 
+            border: none; 
+        }
+
+        .btn-primary:hover { 
+            background: #7dd3fc; 
+            letter-spacing: 2px; 
+        }
+
+        /* =========================================
+           8. INFO PANELS (Database)
+           ========================================= */
+        .fullscreen-panel {
+            display: none; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: var(--bg-dark); 
+            z-index: 200; 
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            padding: 15px 20px; 
+            border-bottom: 1px solid var(--ui-border);
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            background: rgba(15,23,42,0.98); 
+            position: sticky; 
+            top: 0; 
+            z-index: 10;
+        }
+
+        body.matrix-mode .panel-header { 
+            background: #000; 
+        }
+
+        .panel-title { 
+            font-family: var(--font-tech); 
+            font-size:1.2rem; 
+            color: var(--accent-blue); 
+        }
+
+        .list-container { 
+            padding: 20px; 
+            display: grid; 
+            gap: 15px; 
+            padding-bottom: 60px; 
+        }
+
+        .card {
+            background: linear-gradient(90deg, rgba(30, 41, 59, 0.6), transparent); 
+            border-left: 4px solid #555; 
+            border-top: 1px solid #333; 
+            border-bottom: 1px solid #333;
+            padding: 15px; 
+            border-radius: 4px; 
+            text-align: left; 
+            cursor: pointer;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        body.matrix-mode .card { 
+            background: #000; 
+            border: 1px solid #0f0; 
+        }
+        
+        .threat-card {
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+        }
+
+        .threat-icon { 
+            font-size: 2rem; 
+            width: 50px; 
+            text-align: center; 
+        }
+
+        .layer-badge { 
+            font-size: 0.7rem; 
+            font-family: var(--font-tech); 
+            padding: 2px 6px; 
+            border-radius: 2px; 
+            background: #333; 
+            display: inline-block; 
+            margin-top: 4px; 
+        }
+
+        .badge-epi { color: #facc15; border: 1px solid #facc15; }
+        .badge-derm { color: #f87171; border: 1px solid #f87171; }
+        .badge-hypo { color: #c084fc; border: 1px solid #c084fc; }
+
+        /* =========================================
+           9. OSCILLOSCOPE & SIMULATION
+           ========================================= */
+        #detail-view {
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: #050914; 
+            z-index: 300; 
+            flex-direction: column;
+        }
+
+        #monitor-screen {
+            width: 100%; 
+            height: 40vh; 
+            background: #020408; 
+            position: relative; 
+            border-bottom: 4px solid #333;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #monitor-screen::after {
+            content: ''; 
+            position: absolute; 
+            top:0; left:0; 
+            width:100%; height:100%;
+            background-image: linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px; 
+            pointer-events: none;
+        }
+
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1;
+        }
+
+        /* Receptor Visuals (CSS Art) */
+        .receptor-visual { 
+            width: 80px; 
+            height: 80px; 
+            position: absolute; 
+            right: 20px; 
+            top: 20px; 
+            z-index: 5; 
+            opacity: 0.8; 
+        }
+
+        .pacini-css { 
+            border-radius: 50%; 
+            border: 4px solid var(--accent-green); 
+            box-shadow: 0 0 10px var(--accent-green), inset 0 0 10px var(--accent-green); 
+            background: radial-gradient(circle, transparent 20%, var(--accent-green) 21%, transparent 22%, transparent 40%, var(--accent-green) 41%, transparent 42%); 
+        }
+
+        .ruffini-css { 
+            border-radius: 40% 60% 40% 60% / 40% 50% 50% 60%; 
+            border: 3px solid var(--accent-red); 
+            background: rgba(248, 113, 113, 0.2); 
+            box-shadow: 0 0 15px var(--accent-red); 
+        }
+
+        .krause-css { 
+            border-radius: 50%; 
+            border: 3px solid var(--accent-blue); 
+            background: radial-gradient(circle at 30% 30%, var(--accent-blue), transparent); 
+            box-shadow: 0 0 15px var(--accent-blue); 
+        }
+
+        .free-css { 
+            background: transparent; 
+            border-left: 2px solid var(--accent-gold); 
+            height: 60px; 
+            width: 2px; 
+            left: 50%; 
+        }
+
+        .free-css::before { 
+            content:''; 
+            position:absolute; 
+            top:-10px; left:-15px; 
+            width:30px; height:30px; 
+            border-bottom: 2px solid var(--accent-gold); 
+            border-left: 2px solid var(--accent-gold); 
+            transform: rotate(45deg); 
+        }
+
+        .monitor-label { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            font-family: var(--font-tech); 
+            color: var(--accent-green); 
+            font-size: 0.8rem; 
+            z-index: 10; 
+        }
+        
+        .spec-grid {
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-top: 15px; 
+            border-top: 1px solid #333; 
+            padding-top: 15px;
+        }
+
+        .spec-box {
+            background: rgba(255,255,255,0.05); 
+            padding: 8px; 
+            border-radius: 4px;
+        }
+
+        .spec-title {
+            color: #64748b; 
+            font-size: 0.65rem; 
+            font-family: var(--font-tech); 
+            text-transform: uppercase;
+        }
+
+        .spec-val {
+            color: #e2e8f0; 
+            font-size: 0.85rem; 
+            font-weight: bold;
+        }
+
+        /* Manual Stimulus Button */
+        #stimulus-btn {
+            position: absolute; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            background: #e11d48; 
+            color: #fff; 
+            border: 2px solid #fff;
+            padding: 10px 30px; 
+            font-family: var(--font-tech); 
+            font-size: 1.2rem;
+            cursor: pointer; 
+            z-index: 100; 
+            border-radius: 4px;
+            box-shadow: 0 0 15px #e11d48;
+            transition: all 0.1s;
+        }
+
+        #stimulus-btn:active { 
+            transform: translateX(-50%) scale(0.95); 
+            background: #fff; 
+            color: #e11d48; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VISUAL LAYERS (Grid, Scanlines, Watermark) -->
+    <div class="grid-bg"></div>
+    <div class="scanlines"></div>
+    <div id="watermark">Realizat cu pasiune pentru biologie de Ruben Oltean</div>
+    <div id="toast">NOTIFICARE</div>
+
+    <!-- =========================================
+         SCREEN: MAIN MENU / START
+         ========================================= -->
+    <div id="start-screen" class="overlay">
+        <h1 class="hero-title">DERMO DEFENSE</h1>
+        <p style="color: #94a3b8; font-family: var(--font-tech); letter-spacing: 2px;">EDIȚIE DE LABORATOR</p>
+        <div style="margin: 20px 0; font-family: var(--font-tech); color: var(--accent-green);">
+            SCOR MAXIM: <span id="high-score-display">0000</span>
+        </div>
+        <button class="menu-btn btn-primary" onclick="startGame()">ÎNCEPE SIMULAREA</button>
+        <button class="menu-btn" onclick="openCompendium()">OSCILOSCOP NEURONAL</button>
+        <button class="menu-btn" style="border-color: var(--accent-red); color: var(--accent-red);" onclick="openBestiary()">BAZĂ DE DATE INAMICI</button>
+        <p style="margin-top:20px; font-size: 0.7rem; color: #555; font-family: var(--font-tech);">TASTATURĂ: [Q] [W] [E] [R] [SPACE] | [ESC] PAUZĂ</p>
+    </div>
+
+    <!-- =========================================
+         SCREEN: PAUSE
+         ========================================= -->
+    <div id="pause-screen" class="overlay" style="display: none;">
+        <h1 class="hero-title" style="border-color: var(--accent-gold); color: var(--accent-gold); text-shadow: 0 0 20px var(--accent-gold);">SISTEM ÎN PAUZĂ</h1>
+        <div style="font-family: var(--font-tech); color: #94a3b8; text-align: left; margin-bottom: 20px; border: 1px solid #333; padding: 15px; background: #000; width: 80%;">
+            > PROCES OPRIT<br>
+            > AȘTEPTARE COMANDĂ...<br>
+            > AMENINȚĂRI ACTIVE: <span id="paused-threats" style="color: #fff;">0</span>
+        </div>
+        <button class="menu-btn btn-primary" onclick="togglePause()">CONTINUĂ</button>
+        <button class="menu-btn" onclick="quitGame()">IEȘIRE MENIU</button>
+    </div>
+
+    <!-- =========================================
+         SCREEN: GAME OVER
+         ========================================= -->
+    <div id="game-over" class="overlay" style="display: none;">
+        <h1 style="color: var(--accent-red); font-family: var(--font-tech); font-size: 3rem; margin:0; text-shadow: 0 0 15px var(--accent-red);">CEDARE SISTEM</h1>
+        <p id="death-reason" style="color: #cbd5e1; margin: 20px 0; max-width: 80%;">Homeostazie compromisă.</p>
+        <h2 id="final-score" style="color: var(--accent-blue); font-family: var(--font-tech);">SCOR: 0000</h2>
+        <button class="menu-btn btn-primary" onclick="location.reload()">REINIȚIALIZARE</button>
+    </div>
+
+    <!-- =========================================
+         HUD (Heads Up Display)
+         ========================================= -->
+    <div id="hud">
+        <div style="display:flex; align-items:center;">
+            <button class="pause-btn" onclick="togglePause()" title="Pauză (ESC)">II</button>
+            <div class="hud-group">
+                <span class="hud-label">SCOR</span>
+                <span id="score-display">0000</span>
+            </div>
+        </div>
+        <div class="hud-group" style="align-items: center;">
+            <span class="hud-label">NIVEL</span>
+            <span id="level-display">1</span>
+        </div>
+        <div class="hud-group" style="align-items: flex-end;">
+            <span class="hud-label">INTEGRITATE</span>
+            <div class="health-track">
+                <div id="health-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         MAIN GAMEPLAY AREA
+         ========================================= -->
+    <div id="game-area">
+        <div id="epidermis" class="layer"><span class="layer-tag">EPIDERM</span></div>
+        <div id="dermis" class="layer"><span class="layer-tag">DERM</span></div>
+        <div id="hypodermis" class="layer"><span class="layer-tag">HIPODERM</span></div>
+    </div>
+
+    <!-- =========================================
+         CONTROLS / KEYBOARD
+         ========================================= -->
+    <div id="controls">
+        <button class="btn" id="btn-heat" onclick="handleInput('heat')">
+            <span class="key-hint">Q</span>
+            <span class="btn-title">RUFFINI</span><span class="btn-desc">Cald</span>
+            <div class="accent-bar" style="background:#f87171; color:#f87171"></div>
+        </button>
+        <button class="btn" id="btn-cold" onclick="handleInput('cold')">
+            <span class="key-hint">W</span>
+            <span class="btn-title">KRAUSE</span><span class="btn-desc">Rece</span>
+            <div class="accent-bar" style="background:#38bdf8; color:#38bdf8"></div>
+        </button>
+        <button class="btn" id="btn-pressure" onclick="handleInput('pressure')">
+            <span class="key-hint">E</span>
+            <span class="btn-title">PACINI</span><span class="btn-desc">Presiune</span>
+            <div class="accent-bar" style="background:#4ade80; color:#4ade80"></div>
+        </button>
+        <button class="btn" id="btn-touch" onclick="handleInput('touch')">
+            <span class="key-hint">R</span>
+            <span class="btn-title">MEISSNER</span><span class="btn-desc">Tactil Fin</span>
+            <div class="accent-bar" style="background:#c084fc; color:#c084fc"></div>
+        </button>
+        <button class="btn" id="btn-pain" onclick="handleInput('pain')" style="grid-column: span 2;">
+            <span class="key-hint">SPACE</span>
+            <span class="btn-title">NOCICEPTORI</span><span class="btn-desc">Durere</span>
+            <div class="accent-bar" style="background:#facc15; color:#facc15; width:20%"></div>
+        </button>
+    </div>
+
+    <!-- =========================================
+         INFO PANELS
+         ========================================= -->
+    <div id="compendium" class="fullscreen-panel">
+        <div class="panel-header">
+            <span class="panel-title">BAZĂ DE DATE NEURO</span>
+            <button onclick="closePanel('compendium')" style="background:none; border:none; font-size:2rem; color:var(--accent-red); cursor:pointer;">×</button>
+        </div>
+        <div class="list-container" id="receptor-list-container"></div>
+    </div>
+    
+    <div id="bestiary" class="fullscreen-panel">
+        <div class="panel-header">
+            <span class="panel-title" style="color: var(--accent-red);">BAZĂ DE DATE INAMICI</span>
+            <button onclick="closePanel('bestiary')" style="background:none; border:none; font-size:2rem; color:var(--accent-red); cursor:pointer;">×</button>
+        </div>
+        <div class="list-container" id="bestiary-list-container"></div>
+    </div>
+
+    <!-- =========================================
+         OSCILLOSCOPE / LAB
+         ========================================= -->
+    <div id="detail-view">
+        <div style="position: absolute; top: 10px; right: 10px; z-index: 310;">
+             <button onclick="closeDetail()" style="background: rgba(0,0,0,0.5); border: 1px solid #fff; color: #fff; padding: 5px 15px; cursor: pointer; font-family: var(--font-tech);">ÎNCHIDE MONITOR</button>
+        </div>
+        <div id="monitor-screen">
+            <div class="monitor-label">SEMNAL ELECTRIC: <span id="signal-name">NECUNOSCUT</span></div>
+            <div id="receptor-css-container"></div>
+            <!-- MANUAL STIMULUS BUTTON -->
+            <button id="stimulus-btn">APLICĂ STIMUL</button>
+            <canvas id="oscilloCanvas"></canvas>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex-grow: 1; text-align: left; padding-bottom: 40px;" id="detail-content"></div>
+    </div>
+
+    <script>
+        // --- ANATOMY DATABASE (ROMANIAN) ---
+        const receptorData = {
+            pressure: { 
+                name: "Corpusculii Pacini", 
+                color: "#4ade80", 
+                type: "Rapidă (Fazică)", 
+                field: "Larg / Difuz",
+                fiber: "A-beta (30-70 m/s)",
+                desc: "Mecanoreceptori situați profund în hipoderm. Detectează accelerația (vibrații > 100Hz) și presiunea profundă. Datorită capsulei lamelare, se adaptează extrem de rapid, generând potențial de acțiune doar la începutul și sfârșitul stimulului.", 
+                pathway: "Fasciculele Spinobulbare (Goll & Burdach)" 
+            },
+            touch: { 
+                name: "Corpusculii Meissner", 
+                color: "#c084fc", 
+                type: "Rapidă (Fazică)", 
+                field: "Mic / Precis",
+                fiber: "A-beta (30-70 m/s)",
+                desc: "Mecanoreceptori situați în papilele dermice ale pielii glabre (fără păr). Responsabili pentru discriminarea tactilă fină și detectarea texturilor. Densitate maximă în vârful degetelor.", 
+                pathway: "Fasciculele Spinobulbare (Goll & Burdach)" 
+            },
+            heat: { 
+                name: "Corpusculii Ruffini", 
+                color: "#f87171", 
+                type: "Lentă (Tonică)", 
+                field: "Larg",
+                fiber: "A-beta (Lent)",
+                desc: "Receptori fuziformi situați în dermul profund. Detectează căldura persistentă și întinderea mecanică a pielii (ex: strângerea mâinii). Se adaptează foarte lent, monitorizând stimulul continuu.", 
+                pathway: "Fasciculul Spinotalamic Lateral" 
+            },
+            cold: { 
+                name: "Corpusculii Krause", 
+                color: "#38bdf8", 
+                type: "Termoreceptor (Tonic)", 
+                field: "Mic",
+                fiber: "A-delta (5-30 m/s)",
+                desc: "Termoreceptori pentru frig (10-35°C). Situați superficial. Odată temperatura scade sub 10°C, activitatea lor scade și preiau nociceptorii (durere prin îngheț).", 
+                pathway: "Fasciculul Spinotalamic Lateral" 
+            },
+            pain: { 
+                name: "Terminații Libere", 
+                color: "#facc15", 
+                type: "Nociceptor (Non-Adaptiv)", 
+                field: "Variabil",
+                fiber: "A-delta & C (Lent)",
+                desc: "Fibre nervoase fără capsulă. Detectează stimuli nocivi (mecanici, termici, chimici). Nu prezintă adaptare (durerea persistă pentru a semnala pericolul). Fibrele C conduc durerea lentă (surdă).", 
+                pathway: "Fasciculul Spinotalamic Lateral" 
+            }
+        };
+
+        // --- GAME CONSTANTS ---
+        const EPI_LIMIT = 0.80; 
+        const DERM_LIMIT = 0.88; 
+        const HYPO_LIMIT = 1.0;
+        
+        // --- BESTIARY (ENEMIES) ---
+        const enemies = {
+            heat: [ 
+                { name: "Caniculă (UV)", icon: "☀️", speed: 1.5, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm" }, 
+                { name: "Foc Deschis", icon: "🔥", speed: 2.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm" }, 
+                { name: "Apă Clocotită", icon: "♨️", speed: 2.8, dmg: 35, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+            ],
+            cold: [ 
+                { name: "Fulg de Nea", icon: "❄️", speed: 1.8, dmg: 8, limit: EPI_LIMIT, layer: "Epiderm" }, 
+                { name: "Gheață", icon: "🧊", speed: 2.5, dmg: 18, limit: DERM_LIMIT, layer: "Derm" }, 
+                { name: "Azot Lichid", icon: "🥶", speed: 3.2, dmg: 40, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+            ],
+            pressure: [ 
+                { name: "Lovitură", icon: "🥊", speed: 2.5, dmg: 15, limit: DERM_LIMIT, layer: "Derm" }, 
+                { name: "Ciocan", icon: "🔨", speed: 2.0, dmg: 30, limit: HYPO_LIMIT, layer: "Hipoderm" }, 
+                { name: "Strivire", icon: "🪨", speed: 1.5, dmg: 50, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+            ],
+            touch: [ 
+                { name: "Pană", icon: "🪶", speed: 1.5, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm" }, 
+                { name: "Insectă", icon: "🕷️", speed: 3.0, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm" }, 
+                { name: "Vânt", icon: "💨", speed: 2.2, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm" } 
+            ],
+            pain: [ 
+                { name: "Ac", icon: "🪡", speed: 2.0, dmg: 15, limit: DERM_LIMIT, layer: "Derm Papilar" }, 
+                { name: "Înțepătură", icon: "🐝", speed: 3.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm Reticular" }, 
+                { name: "Cuțit", icon: "🔪", speed: 3.8, dmg: 45, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+            ]
+        };
+
+        // --- GLOBAL VARIABLES ---
+        let isPlaying = false; 
+        let isPaused = false; 
+        let score = 0; 
+        let health = 100; 
+        let activeThreats = [];
+        let difficultyLevel = 1; 
+        let globalSpeedMultiplier = 1.0; 
+        let spawnDelay = 2000;
+        let spawnTimer; 
+        let animFrameId; 
+        let inputLockout = false;
+        
+        // --- EASTER EGGS VARS ---
+        let keyBuffer = '';
+        let godMode = false;
+        let watermarkClicks = 0;
+
+        // --- DOM CACHE ---
+        const gameArea = document.getElementById('game-area');
+        const scoreEl = document.getElementById('score-display');
+        const levelEl = document.getElementById('level-display');
+        const healthFill = document.getElementById('health-fill');
+        const watermark = document.getElementById('watermark');
+        const toast = document.getElementById('toast');
+        
+        // Load High Score
+        document.getElementById('high-score-display').innerText = (localStorage.getItem('dermoHighScore') || 0).toString().padStart(4, '0');
+        
+        function toggleWatermark(show) { 
+            watermark.style.opacity = show ? '1' : '0'; 
+        }
+
+        // --- INPUT HANDLING ---
+        document.addEventListener('keydown', (e) => {
+            // Check for Cheat Codes
+            keyBuffer += e.key.toLowerCase();
+            if(keyBuffer.length > 10) keyBuffer = keyBuffer.slice(-10);
+            if(keyBuffer.endsWith('matrix')) toggleMatrix();
+            if(keyBuffer.endsWith('bac')) triggerExamMode();
+
+            // Menu interactions
+            if(document.getElementById('compendium').style.display === 'block' || document.getElementById('bestiary').style.display === 'block') return;
+            if (e.key === 'Escape') { togglePause(); return; }
+            if (!isPlaying || isPaused || inputLockout) return;
+            
+            // Game Controls
+            const key = e.key.toLowerCase();
+            switch(key) {
+                case 'q': case '1': triggerBtn('btn-heat', 'heat'); break;
+                case 'w': case '2': triggerBtn('btn-cold', 'cold'); break;
+                case 'e': case '3': triggerBtn('btn-pressure', 'pressure'); break;
+                case 'r': case '4': triggerBtn('btn-touch', 'touch'); break;
+                case 't': case '5': case ' ': triggerBtn('btn-pain', 'pain'); break;
+            }
+        });
+
+        // God Mode Click (Secret)
+        watermark.addEventListener('click', () => {
+            watermarkClicks++;
+            if(watermarkClicks === 7) {
+                godMode = !godMode;
+                showToast(godMode ? "MOD ZEU: ACTIVAT" : "MOD ZEU: DEZACTIVAT");
+                updateHealthBar();
+            }
+        });
+
+        function triggerBtn(id, type) {
+            const btn = document.getElementById(id);
+            btn.classList.add('pressed'); 
+            setTimeout(() => btn.classList.remove('pressed'), 100);
+            handleInput(type);
+        }
+
+        // --- EGGS LOGIC ---
+        function toggleMatrix() {
+            document.body.classList.toggle('matrix-mode');
+            showToast(document.body.classList.contains('matrix-mode') ? "SISTEM MATRIX: ACTIVAT" : "SISTEM MATRIX: DEZACTIVAT");
+        }
+
+        function triggerExamMode() {
+            globalSpeedMultiplier = 3.0; 
+            spawnDelay = 300;
+            showToast("MOD BACALAUREAT: SUCCES!");
+            scoreEl.style.color = '#ff0000';
+        }
+
+        function showToast(msg) {
+            toast.innerText = msg; 
+            toast.style.opacity = 1;
+            setTimeout(() => toast.style.opacity = 0, 3000);
+        }
+
+        // --- CORE GAME LOOP ---
+        function startGame() {
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
+            toggleWatermark(false);
+            
+            // Reset Vars
+            isPlaying = true; 
+            isPaused = false; 
+            score = 0; 
+            health = 100;
+            difficultyLevel = 1; 
+            globalSpeedMultiplier = 1.0; 
+            spawnDelay = 2000;
+            activeThreats = []; 
+            scoreEl.innerText = "0000"; 
+            levelEl.innerText = "1"; 
+            inputLockout = false;
+            scoreEl.style.color = 'var(--accent-blue)';
+            
+            updateHealthBar();
+            requestAnimationFrame(gameLoop); 
+            scheduleSpawn();
+        }
+
+        function togglePause() {
+            if(!isPlaying) return;
+            isPaused = !isPaused;
+            document.getElementById('pause-screen').style.display = isPaused ? 'flex' : 'none';
+            document.getElementById('paused-threats').innerText = activeThreats.length;
+            if(isPaused) clearTimeout(spawnTimer); 
+            else { requestAnimationFrame(gameLoop); scheduleSpawn(); }
+        }
+
+        function quitGame() { 
+            location.reload(); 
+        }
+
+        function updateDifficulty() {
+            const newLevel = 1 + Math.floor(score / 500);
+            if(newLevel > difficultyLevel) {
+                difficultyLevel = newLevel; 
+                levelEl.innerText = difficultyLevel;
+                if(globalSpeedMultiplier < 3.0) globalSpeedMultiplier = 1.0 + (difficultyLevel * 0.1);
+                spawnDelay = Math.max(500, 2000 - (difficultyLevel * 150));
+            }
+        }
+
+        function scheduleSpawn() {
+            if(!isPlaying || isPaused) return;
+            if(spawnTimer) clearTimeout(spawnTimer);
+            spawnTimer = setTimeout(() => { 
+                if(isPlaying && !isPaused) { 
+                    spawnThreat(); 
+                    scheduleSpawn(); 
+                } 
+            }, spawnDelay);
+        }
+
+        function spawnThreat() {
+            const keys = Object.keys(enemies); 
+            const catKey = keys[Math.floor(Math.random()*keys.length)];
+            const variantList = enemies[catKey]; 
+            const threatData = variantList[Math.floor(Math.random()*variantList.length)];
+            
+            // Create DOM Element
+            const el = document.createElement('div'); 
+            el.classList.add('threat');
+            el.innerText = threatData.icon; 
+            el.style.color = receptorData[catKey].color;
+            el.style.left = (10 + Math.random()*80) + '%';
+            
+            if(threatData.dmg > 25) el.classList.add('threat-heavy'); 
+            if(threatData.dmg < 10) el.classList.add('threat-light');
+            
+            gameArea.appendChild(el);
+            activeThreats.push({ el: el, catId: catKey, data: threatData, y: -50, active: true });
+        }
+
+        function gameLoop() {
+            if(!isPlaying || isPaused) return;
+            const gameH = gameArea.clientHeight;
+            
+            activeThreats.forEach(t => {
+                if(t.active) {
+                    t.y += t.data.speed * globalSpeedMultiplier;
+                    t.el.style.top = t.y + 'px';
+                    
+                    // Spider movement FX
+                    if(t.data.icon === "🕷️") {
+                        t.el.style.transform = `translateX(-50%) translateX(${Math.sin(Date.now()/100)*4}px)`;
+                    }
+                    
+                    const limitY = gameH * t.data.limit; 
+                    if(t.y > limitY) takeDamage(t);
+                }
+            });
+            animFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function takeDamage(t) {
+            t.active = false; 
+            t.el.remove();
+            
+            if(!godMode) { 
+                health -= t.data.dmg; 
+                updateHealthBar(); 
+            }
+            
+            // Red flash effect
+            document.body.style.backgroundColor = '#421111'; 
+            setTimeout(() => document.body.style.backgroundColor = '', 100);
+            
+            if(health <= 0) gameOver(t.data.name + " a distrus bariera: " + t.data.layer);
+        }
+
+        function handleInput(catId) {
+            if(!isPlaying || isPaused || inputLockout) return;
+            
+            const relevant = activeThreats.filter(t => t.active && t.catId === catId);
+            
+            if(relevant.length > 0) {
+                // Hit!
+                relevant.sort((a,b) => b.y - a.y); 
+                const target = relevant[0];
+                createExplosion(target.el.offsetLeft, target.el.offsetTop, receptorData[catId].color);
+                
+                target.active = false; 
+                target.el.remove();
+                
+                score += Math.floor(100 * target.data.speed); 
+                scoreEl.innerText = score.toString().padStart(4, '0');
+                updateDifficulty();
+            } else {
+                // Miss!
+                score = Math.max(0, score - 50); 
+                scoreEl.innerText = score.toString().padStart(4, '0');
+                scoreEl.style.color = '#ef4444'; 
+                setTimeout(() => scoreEl.style.color = '', 100);
+                triggerLockout();
+            }
+        }
+        
+        function triggerLockout() {
+            inputLockout = true;
+            const ctrl = document.getElementById('controls'); 
+            ctrl.classList.add('jammed');
+            setTimeout(() => { 
+                inputLockout = false; 
+                ctrl.classList.remove('jammed'); 
+            }, 500);
+        }
+
+        function createExplosion(x, y, color) {
+            for(let i=0; i<12; i++) {
+                const p = document.createElement('div'); 
+                p.classList.add('particle');
+                p.style.backgroundColor = color; 
+                p.style.boxShadow = `0 0 5px ${color}`;
+                p.style.left = x + 20 + 'px'; 
+                p.style.top = y + 20 + 'px';
+                gameArea.appendChild(p);
+                
+                const angle = Math.random() * Math.PI * 2; 
+                const speed = 30 + Math.random() * 50;
+                const tx = Math.cos(angle) * speed; 
+                const ty = Math.sin(angle) * speed;
+                
+                p.animate([
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 }, 
+                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+                ], { duration: 600, easing: 'ease-out' }).onfinish = () => p.remove();
+            }
+        }
+
+        function updateHealthBar() {
+            const pct = Math.max(0, health); 
+            healthFill.style.width = pct + '%';
+            
+            if(godMode) { 
+                healthFill.style.background = "#f59e0b"; 
+                healthFill.style.boxShadow = "0 0 20px #f59e0b"; 
+                return; 
+            }
+            
+            if(pct > 60) healthFill.style.background = 'linear-gradient(90deg, #38bdf8, #4ade80)';
+            else if (pct > 30) healthFill.style.background = 'linear-gradient(90deg, #facc15, #f97316)';
+            else healthFill.style.background = 'linear-gradient(90deg, #ef4444, #991b1b)';
+            
+            healthFill.style.boxShadow = `0 0 10px ${pct > 60 ? '#4ade80' : (pct>30?'#facc15':'#ef4444')}`;
+        }
+
+        function gameOver(reason) {
+            isPlaying = false; 
+            clearTimeout(spawnTimer); 
+            cancelAnimationFrame(animFrameId);
+            
+            const currentHigh = parseInt(localStorage.getItem('dermoHighScore') || 0);
+            if(score > currentHigh) localStorage.setItem('dermoHighScore', score);
+            
+            document.getElementById('game-over').style.display = 'flex';
+            document.getElementById('final-score').innerText = "SCOR: " + score.toString().padStart(4, '0');
+            document.getElementById('death-reason').innerText = reason;
+            
+            activeThreats.forEach(t => t.el.remove()); 
+            activeThreats = [];
+        }
+
+        // --- UI / MENU LOGIC ---
+        function openCompendium() { 
+            toggleWatermark(false); 
+            if(isPlaying && !isPaused) togglePause(); 
+            document.getElementById('compendium').style.display = 'block'; 
+        }
+
+        function openBestiary() { 
+            toggleWatermark(false); 
+            if(isPlaying && !isPaused) togglePause(); 
+            document.getElementById('bestiary').style.display = 'block'; 
+        }
+
+        function closePanel(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            if(!isPlaying) toggleWatermark(true); 
+        }
+
+        // Populate Panels dynamically
+        const recContainer = document.getElementById('receptor-list-container');
+        for(let key in receptorData) {
+            const item = receptorData[key];
+            const div = document.createElement('div'); 
+            div.className = 'card'; 
+            div.style.borderLeftColor = item.color;
+            div.innerHTML = `<div><div style="color:${item.color}; font-weight:900; font-family:var(--font-tech);">${item.name.toUpperCase()}</div><div style="font-size:0.75rem; color:#94a3b8;">${item.type.split('(')[0]}</div></div><div style="font-size:1.2rem; color:${item.color};">➔</div>`;
+            div.onclick = () => openOscilloscope(key);
+            recContainer.appendChild(div);
+        }
+
+        const bestContainer = document.getElementById('bestiary-list-container');
+        for(let key in enemies) {
+            enemies[key].forEach(e => {
+                const div = document.createElement('div'); 
+                div.className = 'threat-card';
+                
+                const dmgPct = Math.min(100, (e.dmg/50)*100);
+                let barColor = dmgPct>60 ? '#ef4444' : (dmgPct>30 ? '#facc15' : '#4ade80');
+                let badgeClass = e.layer.includes('Epiderm') ? 'badge-epi' : (e.layer.includes('Derm') ? 'badge-derm' : 'badge-hypo');
+                
+                div.innerHTML = `
+                    <div class="threat-icon" style="color:${receptorData[key].color}">${e.icon}</div>
+                    <div style="flex-grow:1;">
+                        <div style="color:#fff; font-family:var(--font-tech);">${e.name}</div>
+                        <span class="layer-badge ${badgeClass}">ȚINTĂ: ${e.layer.toUpperCase()}</span>
+                        <div style="width:100%; height:6px; background:#333; margin-top:5px; border-radius:3px; overflow:hidden;"><div style="width:${dmgPct}%; height:100%; background:${barColor};"></div></div>
+                    </div>`;
+                bestContainer.appendChild(div);
+            });
+        }
+
+        // --- OSCILLOSCOPE & INTERACTIVE LAB ---
+        let oscilloFrame;
+        
+        function openOscilloscope(key) {
+            const data = receptorData[key];
+            const view = document.getElementById('detail-view');
+            const content = document.getElementById('detail-content');
+            const cssCont = document.getElementById('receptor-css-container');
+            const btn = document.getElementById('stimulus-btn');
+            
+            document.getElementById('signal-name').innerText = data.name; 
+            document.getElementById('signal-name').style.color = data.color;
+            btn.style.borderColor = data.color;
+            
+            content.innerHTML = `<div style="font-family:var(--font-tech); color:${data.color}; font-size:1.5rem;">${data.name.toUpperCase()}</div><div class="spec-grid"><div class="spec-box"><div class="spec-title">ADAPTARE</div><div class="spec-val">${data.type.split('(')[1].replace(')','')}</div></div><div class="spec-box"><div class="spec-title">CÂMP RECEPTOR</div><div class="spec-val">${data.field}</div></div><div class="spec-box"><div class="spec-title">TIP FIBRĂ</div><div class="spec-val">${data.fiber}</div></div><div class="spec-box"><div class="spec-title">TRANSMISIE</div><div class="spec-val" style="font-size:0.7rem">${data.pathway}</div></div></div><div style="margin-top:20px; line-height:1.6; color:#ccc; border-left:2px solid ${data.color}; padding-left:15px;">${data.desc}</div>`;
+            
+            cssCont.innerHTML = ''; 
+            const viz = document.createElement('div'); 
+            viz.className = 'receptor-visual';
+            
+            // Assign CSS Art classes
+            if(key==='pressure') viz.classList.add('pacini-css'); 
+            else if(key==='heat') viz.classList.add('ruffini-css'); 
+            else if(key==='cold') viz.classList.add('krause-css'); 
+            else if(key==='touch') { 
+                viz.style.borderRadius='40%'; 
+                viz.style.border=`3px solid ${data.color}`; 
+                viz.style.background=`linear-gradient(${data.color}, transparent)`; 
+            } else viz.classList.add('free-css');
+            
+            cssCont.appendChild(viz);
+
+            view.style.display = 'flex';
+            setTimeout(() => startInteractiveOscillo(key, data.color, btn), 50);
+        }
+
+        function closeDetail() { 
+            document.getElementById('detail-view').style.display = 'none'; 
+            cancelAnimationFrame(oscilloFrame); 
+            const btn = document.getElementById('stimulus-btn');
+            btn.onmousedown = null; btn.onmouseup = null; btn.ontouchstart = null; btn.ontouchend = null;
+        }
+
+        function startInteractiveOscillo(type, color, btn) {
+            const cvs = document.getElementById('oscilloCanvas'); 
+            const ctx = cvs.getContext('2d');
+            cvs.width = cvs.offsetWidth; 
+            cvs.height = cvs.offsetHeight;
+            
+            const scanSpeed = 3; 
+            let scanX = 0; 
+            const baselineY = cvs.height * 0.7;
+            let isStimulating = false; 
+            let burstFrames = 0;
+
+            const startStim = (e) => { 
+                e.preventDefault(); 
+                isStimulating = true; 
+                burstFrames = 20; 
+                btn.style.background = "#fff"; 
+                btn.style.color = "#000"; 
+            };
+            const endStim = (e) => { 
+                e.preventDefault(); 
+                isStimulating = false; 
+                burstFrames = 20; 
+                btn.style.background = ""; 
+                btn.style.color = "#fff"; 
+            };
+            
+            btn.onmousedown = startStim; 
+            btn.onmouseup = endStim; 
+            btn.onmouseleave = endStim; 
+            btn.ontouchstart = startStim; 
+            btn.ontouchend = endStim;
+
+            function draw() {
+                // Fade effect
+                ctx.fillStyle = "rgba(0, 0, 0, 0.15)"; 
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+                
+                // Scan bar
+                ctx.fillStyle = "#000"; 
+                ctx.fillRect(scanX, 0, 15, cvs.height);
+                
+                let signal = 0;
+                
+                // Generate Signal based on biology logic
+                if (type === 'pressure' || type === 'touch') { 
+                    if (burstFrames > 0) { 
+                        if (Math.random() > 0.3) signal = - (Math.random() * 120); 
+                        burstFrames--; 
+                    }
+                } else if (type === 'heat' || type === 'cold') {
+                    if (isStimulating) { 
+                        const t = Date.now() / 50; 
+                        if (Math.floor(t) % 6 === 0) signal = -120; 
+                    }
+                } else if (type === 'pain') {
+                    if (isStimulating) { 
+                        if (Math.random() > 0.5) signal = - (Math.random() * 150); 
+                    }
+                }
+                
+                // Noise
+                signal += (Math.random() - 0.5) * 4;
+                
+                // Draw Line
+                ctx.strokeStyle = color; 
+                ctx.lineWidth = 2; 
+                ctx.shadowBlur = 5; 
+                ctx.shadowColor = color;
+                
+                ctx.beginPath(); 
+                ctx.moveTo(scanX, baselineY); 
+                ctx.lineTo(scanX + scanSpeed, baselineY + signal); 
+                ctx.stroke(); 
+                ctx.shadowBlur = 0;
+                
+                scanX += scanSpeed; 
+                if (scanX > cvs.width) scanX = 0; 
+                oscilloFrame = requestAnimationFrame(draw);
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>
