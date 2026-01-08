@@ -1,8 +1,8 @@
 <!-- 
-    PROJECT: DermoDefense (Final Edition)
+    PROJECT: DermoDefense (Final Master Edition)
     AUTHOR: Ruben Oltean
+    AUDIO: Procedural Audio Engine v2.0 (Full UI Integration)
     DATE: 2026
-    DESC: Biology tower defense game. Don't touch the logic, it works! 
 -->
 
 <!DOCTYPE html>
@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DermoDefense: Ediția Finală</title>
+    <title>DermoDefense: Sistem Complet</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -593,6 +593,12 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            background: linear-gradient(90deg, rgba(56, 189, 248, 0.2), transparent); 
+            transform: translateX(5px);
         }
 
         body.matrix-mode .card { 
@@ -608,6 +614,12 @@
             display: flex; 
             align-items: center; 
             gap: 15px;
+            transition: all 0.2s;
+        }
+        
+        .threat-card:hover {
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.05); 
         }
 
         .threat-icon { 
@@ -806,9 +818,9 @@
         <div style="margin: 20px 0; font-family: var(--font-tech); color: var(--accent-green);">
             SCOR MAXIM: <span id="high-score-display">0000</span>
         </div>
-        <button class="menu-btn btn-primary" onclick="startGame()">ÎNCEPE SIMULAREA</button>
-        <button class="menu-btn" onclick="openCompendium()">OSCILOSCOP NEURONAL</button>
-        <button class="menu-btn" style="border-color: var(--accent-red); color: var(--accent-red);" onclick="openBestiary()">BAZĂ DE DATE INAMICI</button>
+        <button class="menu-btn btn-primary" onclick="startGame()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">ÎNCEPE SIMULAREA</button>
+        <button class="menu-btn" onclick="openCompendium()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">OSCILOSCOP NEURONAL</button>
+        <button class="menu-btn" style="border-color: var(--accent-red); color: var(--accent-red);" onclick="openBestiary()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">BAZĂ DE DATE INAMICI</button>
         <p style="margin-top:20px; font-size: 0.7rem; color: #555; font-family: var(--font-tech);">TASTATURĂ: [Q] [W] [E] [R] [SPACE] | [ESC] PAUZĂ</p>
     </div>
 
@@ -822,8 +834,8 @@
             > AȘTEPTARE COMANDĂ...<br>
             > AMENINȚĂRI ACTIVE: <span id="paused-threats" style="color: #fff;">0</span>
         </div>
-        <button class="menu-btn btn-primary" onclick="togglePause()">CONTINUĂ</button>
-        <button class="menu-btn" onclick="quitGame()">IEȘIRE MENIU</button>
+        <button class="menu-btn btn-primary" onclick="togglePause()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">CONTINUĂ</button>
+        <button class="menu-btn" onclick="quitGame()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">IEȘIRE MENIU</button>
     </div>
 
     <!-- =========================================
@@ -833,7 +845,7 @@
         <h1 style="color: var(--accent-red); font-family: var(--font-tech); font-size: 3rem; margin:0; text-shadow: 0 0 15px var(--accent-red);">CEDARE SISTEM</h1>
         <p id="death-reason" style="color: #cbd5e1; margin: 20px 0; max-width: 80%;">Homeostazie compromisă.</p>
         <h2 id="final-score" style="color: var(--accent-blue); font-family: var(--font-tech);">SCOR: 0000</h2>
-        <button class="menu-btn btn-primary" onclick="location.reload()">REINIȚIALIZARE</button>
+        <button class="menu-btn btn-primary" onclick="location.reload()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">REINIȚIALIZARE</button>
     </div>
 
     <!-- =========================================
@@ -905,7 +917,7 @@
     <div id="compendium" class="fullscreen-panel">
         <div class="panel-header">
             <span class="panel-title">BAZĂ DE DATE NEURO</span>
-            <button onclick="closePanel('compendium')" style="background:none; border:none; font-size:2rem; color:var(--accent-red); cursor:pointer;">×</button>
+            <button onclick="closePanel('compendium')" onmouseenter="AudioSys.playUI('hover')" style="background:none; border:none; font-size:2rem; color:var(--accent-red); cursor:pointer;">×</button>
         </div>
         <div class="list-container" id="receptor-list-container"></div>
     </div>
@@ -913,7 +925,7 @@
     <div id="bestiary" class="fullscreen-panel">
         <div class="panel-header">
             <span class="panel-title" style="color: var(--accent-red);">BAZĂ DE DATE INAMICI</span>
-            <button onclick="closePanel('bestiary')" style="background:none; border:none; font-size:2rem; color:var(--accent-red); cursor:pointer;">×</button>
+            <button onclick="closePanel('bestiary')" onmouseenter="AudioSys.playUI('hover')" style="background:none; border:none; font-size:2rem; color:var(--accent-red); cursor:pointer;">×</button>
         </div>
         <div class="list-container" id="bestiary-list-container"></div>
     </div>
@@ -923,7 +935,7 @@
          ========================================= -->
     <div id="detail-view">
         <div style="position: absolute; top: 10px; right: 10px; z-index: 310;">
-             <button onclick="closeDetail()" style="background: rgba(0,0,0,0.5); border: 1px solid #fff; color: #fff; padding: 5px 15px; cursor: pointer; font-family: var(--font-tech);">ÎNCHIDE MONITOR</button>
+             <button onclick="closeDetail()" onmouseenter="AudioSys.playUI('hover')" style="background: rgba(0,0,0,0.5); border: 1px solid #fff; color: #fff; padding: 5px 15px; cursor: pointer; font-family: var(--font-tech);">ÎNCHIDE MONITOR</button>
         </div>
         <div id="monitor-screen">
             <div class="monitor-label">SEMNAL ELECTRIC: <span id="signal-name">NECUNOSCUT</span></div>
@@ -936,6 +948,309 @@
     </div>
 
     <script>
+        /**
+         * =========================================================================
+         * AUDIO SYSTEM v2.0 (Procedural Synthesis Module + Full UI Integration)
+         * Author: Audio Expert & Senior Programmer
+         * Description: Generates sound effects in real-time using Web Audio API.
+         * =========================================================================
+         */
+        const AudioSys = {
+            ctx: null,
+            masterGain: null,
+            ambienceOsc: [],
+            stimulusOsc: null, // For holding down the button
+
+            // Initialize the Audio Context (must be called on user interaction)
+            init: function() {
+                if (this.ctx) {
+                    if(this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3; // Master volume
+                this.masterGain.connect(this.ctx.destination);
+                console.log("Audio System: Online");
+            },
+
+            // 1. BACKGROUND AMBIENCE (Lab Drone)
+            startAmbience: function() {
+                if(!this.ctx) this.init();
+                this.stopAmbience();
+                
+                // Create 2 Oscillators for a "binaural beat" effect
+                const freqs = [55, 57]; // Low A note, slightly detuned
+                freqs.forEach(f => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth'; // Rougher sound
+                    osc.frequency.value = f;
+                    
+                    // Lowpass filter to make it "submerged"
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 180;
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.masterGain);
+                    
+                    gain.gain.value = 0.15;
+                    osc.start();
+                    this.ambienceOsc.push({osc, gain});
+                });
+            },
+
+            stopAmbience: function() {
+                this.ambienceOsc.forEach(o => {
+                    try { 
+                        o.gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1);
+                        o.osc.stop(this.ctx.currentTime + 1); 
+                    } catch(e){}
+                });
+                this.ambienceOsc = [];
+            },
+
+            // 2. UI SOUNDS (Blips & Clicks)
+            playUI: function(type) {
+                if(!this.ctx) this.init(); // Try init
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                if (type === 'hover') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, t);
+                    gain.gain.setValueAtTime(0.05, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                    osc.start(t);
+                    osc.stop(t + 0.05);
+                } else if (type === 'click') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, t);
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                    osc.start(t);
+                    osc.stop(t + 0.1);
+                } else if (type === 'jam') {
+                    // Error buzz
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, t);
+                    osc.frequency.linearRampToValueAtTime(100, t + 0.2);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.2);
+                    osc.start(t);
+                    osc.stop(t + 0.2);
+                } else if (type === 'data') {
+                    // Rapid high tech tick
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(1200, t);
+                    gain.gain.setValueAtTime(0.05, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+                    osc.start(t);
+                    osc.stop(t + 0.03);
+                } else if (type === 'glitch') {
+                    // Matrix Glitch
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(50, t);
+                    osc.frequency.linearRampToValueAtTime(800, t + 0.1);
+                    osc.frequency.linearRampToValueAtTime(50, t + 0.2);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.2);
+                    osc.start(t);
+                    osc.stop(t + 0.2);
+                }
+            },
+
+            // 3. UI PANELS (Swoosh)
+            playPanel: function(action) {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                // Noise buffer
+                const bufferSize = this.ctx.sampleRate * 0.5;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                const gain = this.ctx.createGain();
+
+                if(action === 'open') {
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(100, t);
+                    filter.frequency.exponentialRampToValueAtTime(2000, t + 0.3);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                } else {
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(2000, t);
+                    filter.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                }
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                noise.start(t);
+            },
+
+            // 4. LAB STIMULUS (Continuous Hum)
+            startStimulusHum: function(type) {
+                if(!this.ctx) return;
+                if(this.stimulusOsc) this.stopStimulusHum();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                // Different hum for different types
+                if(type === 'pain') osc.type = 'sawtooth';
+                else if(type === 'heat') osc.type = 'square';
+                else osc.type = 'sine';
+                
+                osc.frequency.value = 60; // Base electric hum
+                gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                this.stimulusOsc = {osc, gain};
+            },
+
+            stopStimulusHum: function() {
+                if(this.stimulusOsc) {
+                    try {
+                        this.stimulusOsc.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+                        this.stimulusOsc.osc.stop(this.ctx.currentTime + 0.1);
+                    } catch(e){}
+                    this.stimulusOsc = null;
+                }
+            },
+
+            // 5. GAMEPLAY: SHOOTING (Synapse Fire)
+            playShoot: function(type) {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                // Filter to shape the sound
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 200;
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+
+                // Sound properties based on receptor type
+                let startFreq = 800;
+                let endFreq = 200;
+                let duration = 0.15;
+                let wave = 'triangle';
+
+                if(type === 'pain') { startFreq=1200; endFreq=400; wave='square'; }
+                if(type === 'pressure') { startFreq=400; endFreq=50; wave='sine'; duration=0.25; }
+                if(type === 'cold') { startFreq=1500; endFreq=1200; wave='sine'; } // High chime
+
+                osc.type = wave;
+                osc.frequency.setValueAtTime(startFreq, t);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, t + duration);
+                
+                gain.gain.setValueAtTime(0.2, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+
+                osc.start(t);
+                osc.stop(t + duration);
+            },
+
+            // 6. GAMEPLAY: ENEMY DEATH (Membrane Pop)
+            playKill: function() {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                
+                // Noise Buffer for explosion texture
+                const bufferSize = this.ctx.sampleRate * 0.2; // 0.2 seconds
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1000, t);
+                filter.frequency.linearRampToValueAtTime(100, t + 0.2); // Muffler effect
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.3, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                
+                noise.start(t);
+            },
+
+            // 7. GAMEPLAY: DAMAGE TAKEN
+            playDamage: function() {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                // Dissonant interval
+                osc.frequency.setValueAtTime(100, t); 
+                osc.frequency.linearRampToValueAtTime(80, t+0.3);
+
+                gain.gain.setValueAtTime(0.3, t);
+                gain.gain.linearRampToValueAtTime(0, t+0.3);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(t);
+                osc.stop(t+0.3);
+            },
+
+            // 8. GAME OVER SOUND (Power Down)
+            playGameOver: function() {
+                if(!this.ctx) return;
+                this.stopAmbience();
+                const t = this.ctx.currentTime;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.frequency.setValueAtTime(200, t);
+                osc.frequency.exponentialRampToValueAtTime(10, t + 1.5); // Slow pitch drop
+                
+                gain.gain.setValueAtTime(0.3, t);
+                gain.gain.linearRampToValueAtTime(0, t + 1.5);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(t);
+                osc.stop(t + 1.5);
+            }
+        };
+
+        // --- GLOBAL CLICK TO INIT AUDIO ---
+        window.addEventListener('click', () => { AudioSys.init(); }, {once:true});
+
         // --- ANATOMY DATABASE (ROMANIAN) ---
         const receptorData = {
             pressure: { 
@@ -1082,6 +1397,7 @@
             if(watermarkClicks === 7) {
                 godMode = !godMode;
                 showToast(godMode ? "MOD ZEU: ACTIVAT" : "MOD ZEU: DEZACTIVAT");
+                AudioSys.playUI('click');
                 updateHealthBar();
             }
         });
@@ -1096,12 +1412,14 @@
         // --- EGGS LOGIC ---
         function toggleMatrix() {
             document.body.classList.toggle('matrix-mode');
+            AudioSys.playUI('glitch'); // Sound
             showToast(document.body.classList.contains('matrix-mode') ? "SISTEM MATRIX: ACTIVAT" : "SISTEM MATRIX: DEZACTIVAT");
         }
 
         function triggerExamMode() {
             globalSpeedMultiplier = 3.0; 
             spawnDelay = 300;
+            AudioSys.playUI('jam'); // Alert sound
             showToast("MOD BACALAUREAT: SUCCES!");
             scoreEl.style.color = '#ff0000';
         }
@@ -1114,6 +1432,9 @@
 
         // --- CORE GAME LOOP ---
         function startGame() {
+            AudioSys.init(); // Initialize audio engine
+            AudioSys.startAmbience(); // Start drone
+            
             document.getElementById('start-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
             toggleWatermark(false);
@@ -1140,6 +1461,11 @@
         function togglePause() {
             if(!isPlaying) return;
             isPaused = !isPaused;
+            
+            if(isPaused) AudioSys.stopAmbience();
+            else AudioSys.startAmbience();
+            AudioSys.playUI('click');
+            
             document.getElementById('pause-screen').style.display = isPaused ? 'flex' : 'none';
             document.getElementById('paused-threats').innerText = activeThreats.length;
             if(isPaused) clearTimeout(spawnTimer); 
@@ -1216,6 +1542,8 @@
             t.active = false; 
             t.el.remove();
             
+            AudioSys.playDamage(); // AUDIO TRIGGER
+            
             if(!godMode) { 
                 health -= t.data.dmg; 
                 updateHealthBar(); 
@@ -1235,6 +1563,7 @@
             
             if(relevant.length > 0) {
                 // Hit!
+                AudioSys.playShoot(catId); // Trigger synth shot
                 relevant.sort((a,b) => b.y - a.y); 
                 const target = relevant[0];
                 createExplosion(target.el.offsetLeft, target.el.offsetTop, receptorData[catId].color);
@@ -1242,11 +1571,14 @@
                 target.active = false; 
                 target.el.remove();
                 
+                setTimeout(() => AudioSys.playKill(), 50); // Delay slightly for impact feel
+
                 score += Math.floor(100 * target.data.speed); 
                 scoreEl.innerText = score.toString().padStart(4, '0');
                 updateDifficulty();
             } else {
                 // Miss!
+                AudioSys.playUI('jam'); // Error sound
                 score = Math.max(0, score - 50); 
                 scoreEl.innerText = score.toString().padStart(4, '0');
                 scoreEl.style.color = '#ef4444'; 
@@ -1309,6 +1641,8 @@
             clearTimeout(spawnTimer); 
             cancelAnimationFrame(animFrameId);
             
+            AudioSys.playGameOver(); // Sad sound
+
             const currentHigh = parseInt(localStorage.getItem('dermoHighScore') || 0);
             if(score > currentHigh) localStorage.setItem('dermoHighScore', score);
             
@@ -1322,18 +1656,21 @@
 
         // --- UI / MENU LOGIC ---
         function openCompendium() { 
+            AudioSys.playPanel('open');
             toggleWatermark(false); 
             if(isPlaying && !isPaused) togglePause(); 
             document.getElementById('compendium').style.display = 'block'; 
         }
 
         function openBestiary() { 
+            AudioSys.playPanel('open');
             toggleWatermark(false); 
             if(isPlaying && !isPaused) togglePause(); 
             document.getElementById('bestiary').style.display = 'block'; 
         }
 
         function closePanel(id) { 
+            AudioSys.playPanel('close');
             document.getElementById(id).style.display = 'none'; 
             if(!isPlaying) toggleWatermark(true); 
         }
@@ -1347,6 +1684,7 @@
             div.style.borderLeftColor = item.color;
             div.innerHTML = `<div><div style="color:${item.color}; font-weight:900; font-family:var(--font-tech);">${item.name.toUpperCase()}</div><div style="font-size:0.75rem; color:#94a3b8;">${item.type.split('(')[0]}</div></div><div style="font-size:1.2rem; color:${item.color};">➔</div>`;
             div.onclick = () => openOscilloscope(key);
+            div.onmouseenter = () => AudioSys.playUI('data');
             recContainer.appendChild(div);
         }
 
@@ -1367,6 +1705,7 @@
                         <span class="layer-badge ${badgeClass}">ȚINTĂ: ${e.layer.toUpperCase()}</span>
                         <div style="width:100%; height:6px; background:#333; margin-top:5px; border-radius:3px; overflow:hidden;"><div style="width:${dmgPct}%; height:100%; background:${barColor};"></div></div>
                     </div>`;
+                div.onmouseenter = () => AudioSys.playUI('data');
                 bestContainer.appendChild(div);
             });
         }
@@ -1375,6 +1714,7 @@
         let oscilloFrame;
         
         function openOscilloscope(key) {
+            AudioSys.playPanel('open');
             const data = receptorData[key];
             const view = document.getElementById('detail-view');
             const content = document.getElementById('detail-content');
@@ -1408,6 +1748,8 @@
         }
 
         function closeDetail() { 
+            AudioSys.playPanel('close');
+            AudioSys.stopStimulusHum();
             document.getElementById('detail-view').style.display = 'none'; 
             cancelAnimationFrame(oscilloFrame); 
             const btn = document.getElementById('stimulus-btn');
@@ -1432,6 +1774,7 @@
                 burstFrames = 20; 
                 btn.style.background = "#fff"; 
                 btn.style.color = "#000"; 
+                AudioSys.startStimulusHum(type); // Start Hum
             };
             const endStim = (e) => { 
                 e.preventDefault(); 
@@ -1439,6 +1782,7 @@
                 burstFrames = 20; 
                 btn.style.background = ""; 
                 btn.style.color = "#fff"; 
+                AudioSys.stopStimulusHum(); // Stop Hum
             };
             
             btn.onmousedown = startStim; 
@@ -1457,23 +1801,35 @@
                 ctx.fillRect(scanX, 0, 15, cvs.height);
                 
                 let signal = 0;
+                let triggerSound = false;
                 
                 // Generate Signal based on biology logic
                 if (type === 'pressure' || type === 'touch') { 
                     if (burstFrames > 0) { 
-                        if (Math.random() > 0.3) signal = - (Math.random() * 120); 
+                        if (Math.random() > 0.3) { 
+                            signal = - (Math.random() * 120); 
+                            triggerSound = true; 
+                        }
                         burstFrames--; 
                     }
                 } else if (type === 'heat' || type === 'cold') {
                     if (isStimulating) { 
                         const t = Date.now() / 50; 
-                        if (Math.floor(t) % 6 === 0) signal = -120; 
+                        if (Math.floor(t) % 6 === 0) { 
+                            signal = -120; 
+                            triggerSound = true; 
+                        }
                     }
                 } else if (type === 'pain') {
                     if (isStimulating) { 
-                        if (Math.random() > 0.5) signal = - (Math.random() * 150); 
+                        if (Math.random() > 0.5) { 
+                            signal = - (Math.random() * 150); 
+                            triggerSound = true;
+                        } 
                     }
                 }
+
+                if(triggerSound && Math.random() > 0.7) AudioSys.playShoot(type); // Discrete fire
                 
                 // Noise
                 signal += (Math.random() - 0.5) * 4;
