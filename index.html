@@ -1,7 +1,7 @@
 <!-- 
     PROJECT: DermoDefense (Final Master Edition)
     AUTHOR: Ruben Oltean
-    AUDIO: Procedural Audio Engine v2.2 (Phasic Logic Fixed)
+    AUDIO: Procedural Audio Engine v2.4 (Combo Logic & Persistence)
     DATE: 2026
 -->
 
@@ -9,7 +9,7 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DermoDefense: Sistem Complet</title>
     
     <!-- Google Fonts -->
@@ -64,6 +64,7 @@
             color: var(--text-main);
             font-family: var(--font-main);
             height: 100vh;
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -142,6 +143,22 @@
             transition: opacity 0.3s;
             text-align: center; 
             box-shadow: 0 0 20px var(--accent-gold);
+        }
+
+        #heal-text {
+            position: fixed;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent-green);
+            font-family: var(--font-tech);
+            font-size: 1.5rem;
+            font-weight: bold;
+            z-index: 1900;
+            pointer-events: none;
+            opacity: 0;
+            text-shadow: 0 0 15px var(--accent-green);
+            transition: all 0.5s;
         }
 
         #hud {
@@ -265,7 +282,6 @@
             transition: all 0.5s;
         }
         
-        /* Specific Skin Layers */
         #epidermis { 
             bottom: 20%; 
             height: 8%; 
@@ -292,7 +308,6 @@
             z-index: 1; 
         }
 
-        /* Matrix Override for Layers */
         body.matrix-mode .layer { 
             background: transparent !important; 
             border: 1px solid #0f0; 
@@ -359,6 +374,25 @@
             z-index: 15;
         }
 
+        /* SCORE POPUP ANIMATION */
+        .score-popup {
+            position: absolute;
+            font-family: var(--font-tech);
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #fff;
+            pointer-events: none;
+            z-index: 50;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            animation: floatUp 0.8s ease-out forwards;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+            50% { transform: translate(-50%, -150%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -250%) scale(1); opacity: 0; }
+        }
+
         /* =========================================
            6. CONTROLS PANEL
            ========================================= */
@@ -370,6 +404,7 @@
             grid-template-rows: 1fr 1fr 1fr;
             gap: 10px; 
             padding: 15px; 
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
             border-top: 1px solid var(--ui-border); 
             z-index: 30;
             flex-shrink: 0; 
@@ -536,6 +571,21 @@
             background: #7dd3fc; 
             letter-spacing: 2px; 
         }
+
+        /* TUTORIAL BOX */
+        .tutorial-box {
+            border: 1px solid var(--accent-green);
+            background: rgba(0, 20, 0, 0.3);
+            padding: 20px;
+            max-width: 500px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-family: var(--font-tech);
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+        .tut-highlight { color: var(--accent-blue); font-weight: bold; }
+        .tut-warn { color: var(--accent-red); font-weight: bold; }
 
         /* =========================================
            8. INFO PANELS (Database)
@@ -775,12 +825,11 @@
             font-weight: bold;
         }
 
-        /* Manual Stimulus Button */
+        /* FIXED MANUAL STIMULUS BUTTON */
         #stimulus-btn {
-            position: absolute; 
-            bottom: 20px; 
-            left: 50%; 
-            transform: translateX(-50%);
+            display: block;
+            position: relative;
+            margin: 15px auto 5px auto; /* Centered, not absolute */
             background: #e11d48; 
             color: #fff; 
             border: 2px solid #fff;
@@ -788,14 +837,14 @@
             font-family: var(--font-tech); 
             font-size: 1.2rem;
             cursor: pointer; 
-            z-index: 100; 
+            z-index: 305; 
             border-radius: 4px;
             box-shadow: 0 0 15px #e11d48;
             transition: all 0.1s;
         }
 
         #stimulus-btn:active { 
-            transform: translateX(-50%) scale(0.95); 
+            transform: scale(0.95); 
             background: #fff; 
             color: #e11d48; 
         }
@@ -808,6 +857,7 @@
     <div class="scanlines"></div>
     <div id="watermark">Realizat cu pasiune pentru biologie de Ruben Oltean</div>
     <div id="toast">NOTIFICARE</div>
+    <div id="heal-text">+15 REGENERARE</div>
 
     <!-- =========================================
          SCREEN: MAIN MENU / START
@@ -818,10 +868,27 @@
         <div style="margin: 20px 0; font-family: var(--font-tech); color: var(--accent-green);">
             SCOR MAXIM: <span id="high-score-display">0000</span>
         </div>
-        <button class="menu-btn btn-primary" onclick="startGame()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">ÎNCEPE SIMULAREA</button>
+        <button class="menu-btn btn-primary" onclick="initTutorialCheck()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">ÎNCEPE SIMULAREA</button>
         <button class="menu-btn" onclick="openCompendium()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">OSCILOSCOP NEURONAL</button>
         <button class="menu-btn" style="border-color: var(--accent-red); color: var(--accent-red);" onclick="openBestiary()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">BAZĂ DE DATE INAMICI</button>
         <p style="margin-top:20px; font-size: 0.7rem; color: #555; font-family: var(--font-tech);">TASTATURĂ: [Q] [W] [E] [R] [SPACE] | [ESC] PAUZĂ</p>
+    </div>
+
+    <!-- =========================================
+         SCREEN: TUTORIAL POP-UP
+         ========================================= -->
+    <div id="tutorial-screen" class="overlay" style="display: none;">
+        <h1 class="hero-title" style="font-size: 2rem;">INSTRUCTAJ</h1>
+        <div class="tutorial-box">
+            <p>> <span class="tut-highlight">MISIUNEA TA:</span> Protejează integritatea pielii de amenințările externe.</p>
+            <p>> <span class="tut-highlight">MECANICA:</span> Inamicii vor cădea spre straturile pielii. Apasă butonul corespunzător (sau tasta Q, W, E, R, Space) înainte ca inamicul să lovească stratul țintă.</p>
+            <p>> <span class="tut-highlight">SCOR & REGENERARE:</span>
+                <br>• Loviturile consecutive cresc multiplicatorul de scor (max 5x).
+                <br>• Elimină <span style="color: var(--accent-green);">10 inamici</span> la rând pentru a regenera sănătatea.
+            </p>
+            <p>> <span class="tut-warn">ATENȚIE:</span> Apăsarea greșită provoacă oboseală sinaptică și resetează multiplicatorul.</p>
+        </div>
+        <button class="menu-btn btn-primary" onclick="closeTutorial()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">AM ÎNȚELES</button>
     </div>
 
     <!-- =========================================
@@ -835,6 +902,7 @@
             > AMENINȚĂRI ACTIVE: <span id="paused-threats" style="color: #fff;">0</span>
         </div>
         <button class="menu-btn btn-primary" onclick="togglePause()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">CONTINUĂ</button>
+        <button class="menu-btn" onclick="showTutorialFromPause()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">REGULI & MECANICĂ</button>
         <button class="menu-btn" onclick="quitGame()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">IEȘIRE MENIU</button>
     </div>
 
@@ -940,17 +1008,18 @@
         <div id="monitor-screen">
             <div class="monitor-label">SEMNAL ELECTRIC: <span id="signal-name">NECUNOSCUT</span></div>
             <div id="receptor-css-container"></div>
-            <!-- MANUAL STIMULUS BUTTON -->
-            <button id="stimulus-btn">APLICĂ STIMUL</button>
             <canvas id="oscilloCanvas"></canvas>
         </div>
+        <!-- MOVED BUTTON OUT OF MONITOR SCREEN -->
+        <button id="stimulus-btn">APLICĂ STIMUL</button>
+        
         <div style="padding: 20px; overflow-y: auto; flex-grow: 1; text-align: left; padding-bottom: 40px;" id="detail-content"></div>
     </div>
 
     <script>
         /**
          * =========================================================================
-         * AUDIO SYSTEM v2.2 (Procedural Synthesis Module + Full UI Integration)
+         * AUDIO SYSTEM v2.4 (Procedural Synthesis + Combo Logic)
          * Author: Audio Expert & Senior Programmer
          * Description: Generates sound effects in real-time using Web Audio API.
          * =========================================================================
@@ -1065,6 +1134,15 @@
                     gain.gain.linearRampToValueAtTime(0, t + 0.2);
                     osc.start(t);
                     osc.stop(t + 0.2);
+                } else if (type === 'heal') {
+                    // Positive Regen Chime
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, t);
+                    osc.frequency.linearRampToValueAtTime(880, t + 0.3);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                    osc.start(t);
+                    osc.stop(t + 0.3);
                 }
             },
 
@@ -1346,6 +1424,9 @@
         let spawnTimer; 
         let animFrameId; 
         let inputLockout = false;
+        let comboCounter = 0; // For regen
+        let scoreMultiplier = 1; // NEW: Score multiplier
+        let isTutorialFromPause = false; // Flag for navigation
         
         // --- EASTER EGGS VARS ---
         let keyBuffer = '';
@@ -1359,6 +1440,7 @@
         const healthFill = document.getElementById('health-fill');
         const watermark = document.getElementById('watermark');
         const toast = document.getElementById('toast');
+        const healText = document.getElementById('heal-text');
         
         // Load High Score
         document.getElementById('high-score-display').innerText = (localStorage.getItem('dermoHighScore') || 0).toString().padStart(4, '0');
@@ -1430,13 +1512,56 @@
             setTimeout(() => toast.style.opacity = 0, 3000);
         }
 
-        // --- CORE GAME LOOP ---
-        function startGame() {
-            AudioSys.init(); // Initialize audio engine
+        // --- CORE GAME LOOP & INIT ---
+        
+        // Step 1: User clicks "Incepe Simularea"
+        function initTutorialCheck() {
+            AudioSys.init(); 
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-screen').style.display = 'none';
+                
+                // CHECK LOCAL STORAGE FOR TUTORIAL
+                if (localStorage.getItem('dermoTutorialSeen') === 'true') {
+                    startActualGame();
+                } else {
+                    isTutorialFromPause = false;
+                    document.getElementById('tutorial-screen').style.display = 'flex';
+                    AudioSys.playPanel('open');
+                }
+            }, 300);
+        }
+
+        // Access Tutorial from Pause Menu
+        function showTutorialFromPause() {
+            isTutorialFromPause = true;
+            document.getElementById('pause-screen').style.display = 'none';
+            document.getElementById('tutorial-screen').style.display = 'flex';
+            AudioSys.playPanel('open');
+        }
+
+        // Close Tutorial (Logic depends on source)
+        function closeTutorial() {
+            localStorage.setItem('dermoTutorialSeen', 'true'); // Remember user saw it
+            document.getElementById('tutorial-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('tutorial-screen').style.display = 'none';
+                document.getElementById('tutorial-screen').style.opacity = '1';
+                
+                if (isTutorialFromPause) {
+                    // Go back to Pause menu
+                    document.getElementById('pause-screen').style.display = 'flex';
+                } else {
+                    // Start new game
+                    startActualGame();
+                }
+            }, 300);
+        }
+
+        // Step 2: Start Game Loop
+        function startActualGame() {
             AudioSys.startAmbience(); // Start drone
             
-            document.getElementById('start-screen').style.opacity = '0';
-            setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
             toggleWatermark(false);
             
             // Reset Vars
@@ -1451,6 +1576,8 @@
             scoreEl.innerText = "0000"; 
             levelEl.innerText = "1"; 
             inputLockout = false;
+            comboCounter = 0; 
+            scoreMultiplier = 1; // Reset Multiplier
             scoreEl.style.color = 'var(--accent-blue)';
             
             updateHealthBar();
@@ -1541,6 +1668,8 @@
         function takeDamage(t) {
             t.active = false; 
             t.el.remove();
+            comboCounter = 0; // Break Regen Combo
+            scoreMultiplier = 1; // Break Score Multiplier
             
             AudioSys.playDamage(); // AUDIO TRIGGER
             
@@ -1563,28 +1692,85 @@
             
             if(relevant.length > 0) {
                 // Hit!
-                AudioSys.playShoot(catId); // Trigger synth shot
+                AudioSys.playShoot(catId); 
                 relevant.sort((a,b) => b.y - a.y); 
                 const target = relevant[0];
+                
+                // Increase Multiplier
+                scoreMultiplier = Math.min(5, scoreMultiplier + 1);
+
                 createExplosion(target.el.offsetLeft, target.el.offsetTop, receptorData[catId].color);
                 
                 target.active = false; 
                 target.el.remove();
                 
-                setTimeout(() => AudioSys.playKill(), 50); // Delay slightly for impact feel
+                setTimeout(() => AudioSys.playKill(), 50); 
 
-                score += Math.floor(100 * target.data.speed); 
+                // Calculate Score
+                const points = Math.floor(100 * target.data.speed) * scoreMultiplier;
+                score += points; 
                 scoreEl.innerText = score.toString().padStart(4, '0');
+
+                // Spawn Score Popup
+                spawnScorePopup(target.el, points, scoreMultiplier);
+                
+                // REGEN COMBO
+                comboCounter++;
+                if(comboCounter >= 10) healPlayer();
+
                 updateDifficulty();
             } else {
                 // Miss!
-                AudioSys.playUI('jam'); // Error sound
+                AudioSys.playUI('jam'); 
+                comboCounter = 0; // Break combo
+                scoreMultiplier = 1; // Reset Multiplier
                 score = Math.max(0, score - 50); 
                 scoreEl.innerText = score.toString().padStart(4, '0');
                 scoreEl.style.color = '#ef4444'; 
                 setTimeout(() => scoreEl.style.color = '', 100);
                 triggerLockout();
             }
+        }
+
+        // NEW: Floating Score Popup
+        function spawnScorePopup(targetEl, points, mult) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.style.left = targetEl.style.left;
+            popup.style.top = targetEl.style.top;
+            
+            // Text logic
+            let text = `+${points}`;
+            if(mult > 1) text += ` x${mult}`;
+            popup.innerText = text;
+
+            // Color logic based on multiplier
+            if(mult === 5) popup.style.color = '#facc15'; // Gold
+            else if(mult >= 3) popup.style.color = '#38bdf8'; // Blue
+            else popup.style.color = '#fff';
+
+            gameArea.appendChild(popup);
+            setTimeout(() => popup.remove(), 800);
+        }
+        
+        function healPlayer() {
+            comboCounter = 0; // Reset
+            if (health < 100 && !godMode) {
+                health = Math.min(100, health + 15);
+                updateHealthBar();
+                AudioSys.playUI('heal'); 
+                showHealText();
+                showToast("REGENERARE ACTIVĂ");
+            }
+        }
+
+        function showHealText() {
+            healText.style.opacity = 1;
+            healText.style.top = "120px"; // Float up
+            setTimeout(() => {
+                healText.style.opacity = 0;
+                healText.style.top = "140px"; // Reset pos
+            }, 1500);
         }
         
         function triggerLockout() {
