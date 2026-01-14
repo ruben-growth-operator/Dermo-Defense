@@ -64,7 +64,7 @@
             color: var(--text-main);
             font-family: var(--font-main);
             height: 100vh;
-            height: 100dvh; 
+            height: 100dvh; /* Dynamic Viewport for Safari Mobile */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -162,13 +162,17 @@
         }
 
         #hud {
-            height: 80px; 
+            /* FIXED: Safari UI Sizing for Notch */
+            height: calc(70px + env(safe-area-inset-top)); 
+            padding-top: env(safe-area-inset-top);
+            
             background: rgba(8, 12, 24, 0.98);
             border-bottom: 2px solid var(--ui-border);
             display: flex; 
             justify-content: space-between; 
             align-items: center;
-            padding: 0 15px; 
+            padding-left: 15px;
+            padding-right: 15px; 
             z-index: 20;
             box-shadow: 0 5px 20px rgba(0,0,0,0.6);
             flex-shrink: 0;
@@ -397,6 +401,7 @@
            6. CONTROLS PANEL
            ========================================= */
         #controls {
+            /* FIXED: Safari Bottom Bar Support */
             height: 35vh; 
             background: rgba(11, 17, 32, 0.98);
             display: grid; 
