@@ -1,5 +1,7 @@
+--- START OF FILE index.html ---
+
 <!-- 
-    PROJECT: DermoDefense (Final Master Edition)
+    PROJECT: DermoDefense (Final Master Edition - Balanced & Enhanced)
     AUTHOR: Ruben Oltean
     AUDIO: Procedural Audio Engine v2.6 (Cuphead Death Cards & Juice)
     DATE: 2026
@@ -100,6 +102,16 @@
 
         .hit-pulse {
             animation: pulse-white 0.2s linear;
+        }
+        
+        /* Button Hint Animation */
+        @keyframes button-flash {
+            0% { background-color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 20px #fff; }
+            100% { background-color: inherit; }
+        }
+        
+        .hint-flash {
+            animation: button-flash 0.4s ease-out;
         }
 
         /* =========================================
@@ -444,12 +456,34 @@
             z-index: 50;
             text-shadow: 0 0 5px rgba(0,0,0,0.8);
             animation: floatUp 0.8s ease-out forwards;
+            white-space: nowrap;
         }
         
         @keyframes floatUp {
             0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
             30% { transform: translate(-50%, -150%) scale(1.4); opacity: 1; } /* More punch */
             100% { transform: translate(-50%, -250%) scale(1); opacity: 0; }
+        }
+
+        /* RECEPTOR NAME FLASH */
+        .receptor-flash {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-tech);
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: rgba(255,255,255,0.1);
+            pointer-events: none;
+            z-index: 40;
+            animation: zoomFade 0.5s ease-out forwards;
+        }
+
+        @keyframes zoomFade {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
 
         /* CUPHEAD DEATH CARD STYLE */
@@ -1503,31 +1537,32 @@
         const HYPO_LIMIT = 1.0;
         
         // --- BESTIARY (ENEMIES) WITH DEATH QUOTES ---
+        // Tweaked speeds to be slightly more forgiving for students (max speed reduced from 3.8 to 3.0)
         const enemies = {
             heat: [ 
                 { name: "Caniculă (UV)", icon: "☀️", speed: 1.5, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm", quote: "Soarele te-a ars un pic, \n Ruffini n-a simțit nimic." }, 
-                { name: "Foc Deschis", icon: "🔥", speed: 2.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm", quote: "Flacăra s-a extins rapid, \n Dermul tău e acum lichid." }, 
-                { name: "Apă Clocotită", icon: "♨️", speed: 2.8, dmg: 35, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Opărit și fără vlagă, \n Pielea ta e o mlaștină întreagă." } 
+                { name: "Foc Deschis", icon: "🔥", speed: 2.0, dmg: 20, limit: DERM_LIMIT, layer: "Derm", quote: "Flacăra s-a extins rapid, \n Dermul tău e acum lichid." }, 
+                { name: "Apă Clocotită", icon: "♨️", speed: 2.5, dmg: 35, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Opărit și fără vlagă, \n Pielea ta e o mlaștină întreagă." } 
             ],
             cold: [ 
                 { name: "Fulg de Nea", icon: "❄️", speed: 1.8, dmg: 8, limit: EPI_LIMIT, layer: "Epiderm", quote: "Un fulg mic s-a așezat, \n Krause a fost înghețat." }, 
-                { name: "Gheață", icon: "🧊", speed: 2.5, dmg: 18, limit: DERM_LIMIT, layer: "Derm", quote: "Rece, dur și cristalin, \n Ți-am făcut un derm hain." }, 
-                { name: "Azot Lichid", icon: "🥶", speed: 3.2, dmg: 40, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Zero grade absolut, \n Țesutul a dispărut." } 
+                { name: "Gheață", icon: "🧊", speed: 2.2, dmg: 18, limit: DERM_LIMIT, layer: "Derm", quote: "Rece, dur și cristalin, \n Ți-am făcut un derm hain." }, 
+                { name: "Azot Lichid", icon: "🥶", speed: 2.8, dmg: 40, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Zero grade absolut, \n Țesutul a dispărut." } 
             ],
             pressure: [ 
-                { name: "Lovitură", icon: "🥊", speed: 2.5, dmg: 15, limit: DERM_LIMIT, layer: "Derm", quote: "Pumnul a lovit din plin, \n Pacini a simțit... puțin." }, 
-                { name: "Ciocan", icon: "🔨", speed: 2.0, dmg: 30, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Vibrații mari, impact brutal, \n Finalul e fenomenal." }, 
-                { name: "Strivire", icon: "🪨", speed: 1.5, dmg: 50, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Greutatea te-a strivit, \n Hipodermul a-mpietrit." } 
+                { name: "Lovitură", icon: "🥊", speed: 2.2, dmg: 15, limit: DERM_LIMIT, layer: "Derm", quote: "Pumnul a lovit din plin, \n Pacini a simțit... puțin." }, 
+                { name: "Ciocan", icon: "🔨", speed: 1.8, dmg: 30, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Vibrații mari, impact brutal, \n Finalul e fenomenal." }, 
+                { name: "Strivire", icon: "🪨", speed: 1.4, dmg: 50, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Greutatea te-a strivit, \n Hipodermul a-mpietrit." } 
             ],
             touch: [ 
                 { name: "Pană", icon: "🪶", speed: 1.5, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm", quote: "Gâdilat și amuzat, \n Meissner te-a abandonat." }, 
-                { name: "Insectă", icon: "🕷️", speed: 3.0, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm", quote: "Picioare mici pe pielea ta, \n Sistemul nu le detecta." }, 
-                { name: "Vânt", icon: "💨", speed: 2.2, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm", quote: "O briză rece a trecut, \n Atingerea nu ți-a plăcut." } 
+                { name: "Insectă", icon: "🕷️", speed: 2.5, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm", quote: "Picioare mici pe pielea ta, \n Sistemul nu le detecta." }, 
+                { name: "Vânt", icon: "💨", speed: 2.0, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm", quote: "O briză rece a trecut, \n Atingerea nu ți-a plăcut." } 
             ],
             pain: [ 
-                { name: "Ac", icon: "🪡", speed: 2.0, dmg: 15, limit: DERM_LIMIT, layer: "Derm Papilar", quote: "Un vârf ascuțit și fin, \n Ți-a adus un mare chin." }, 
-                { name: "Înțepătură", icon: "🐝", speed: 3.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm Reticular", quote: "Veninul s-a infiltrat, \n Nociceptorii-au abdicat." }, 
-                { name: "Cuțit", icon: "🔪", speed: 3.8, dmg: 45, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Lama rece a tăiat, \n Jocul s-a terminat." } 
+                { name: "Ac", icon: "🪡", speed: 1.8, dmg: 15, limit: DERM_LIMIT, layer: "Derm Papilar", quote: "Un vârf ascuțit și fin, \n Ți-a adus un mare chin." }, 
+                { name: "Înțepătură", icon: "🐝", speed: 2.8, dmg: 20, limit: DERM_LIMIT, layer: "Derm Reticular", quote: "Veninul s-a infiltrat, \n Nociceptorii-au abdicat." }, 
+                { name: "Cuțit", icon: "🔪", speed: 3.0, dmg: 45, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Lama rece a tăiat, \n Jocul s-a terminat." } 
             ]
         };
 
@@ -1725,24 +1760,33 @@
         }
 
         function updateDifficulty() {
-            const newLevel = 1 + Math.floor(score / 500);
+            // Tweaked: Difficulty increases every 750 points (was 500) to give more breathing room
+            const newLevel = 1 + Math.floor(score / 750);
             if(newLevel > difficultyLevel) {
                 difficultyLevel = newLevel; 
                 levelEl.innerText = difficultyLevel;
-                if(globalSpeedMultiplier < 3.0) globalSpeedMultiplier = 1.0 + (difficultyLevel * 0.1);
-                spawnDelay = Math.max(500, 2000 - (difficultyLevel * 150));
+                
+                // Tweaked: Speed increases by 5% per level instead of 10%
+                if(globalSpeedMultiplier < 2.5) globalSpeedMultiplier = 1.0 + (difficultyLevel * 0.05);
+                
+                // Tweaked: Logarithmic decay for spawn delay (smoother curve)
+                // Prevents the game from becoming impossible too quickly
+                spawnDelay = Math.max(600, 2000 * Math.pow(0.95, difficultyLevel));
             }
         }
 
-        function scheduleSpawn() {
+        function scheduleSpawn(delayOverride = null) {
             if(!isPlaying || isPaused) return;
             if(spawnTimer) clearTimeout(spawnTimer);
+            
+            const currentDelay = delayOverride || spawnDelay;
+            
             spawnTimer = setTimeout(() => { 
                 if(isPlaying && !isPaused) { 
                     spawnThreat(); 
                     scheduleSpawn(); 
                 } 
-            }, spawnDelay);
+            }, currentDelay);
         }
 
         function spawnThreat() {
@@ -1762,7 +1806,9 @@
             if(threatData.dmg < 10) el.classList.add('threat-light');
             
             gameArea.appendChild(el);
-            activeThreats.push({ el: el, catId: catKey, data: threatData, y: -50, active: true });
+            
+            // Start slightly above to give reaction time
+            activeThreats.push({ el: el, catId: catKey, data: threatData, y: -80, active: true });
         }
 
         function gameLoop() {
@@ -1786,12 +1832,32 @@
             animFrameId = requestAnimationFrame(gameLoop);
         }
 
+        // New Helper to Flash Correct Button
+        function correctButtonFlash(catId) {
+            const map = {
+                'heat': 'btn-heat',
+                'cold': 'btn-cold',
+                'pressure': 'btn-pressure',
+                'touch': 'btn-touch',
+                'pain': 'btn-pain'
+            };
+            const btn = document.getElementById(map[catId]);
+            if(btn) {
+                btn.classList.remove('hint-flash');
+                void btn.offsetWidth; // Trigger reflow
+                btn.classList.add('hint-flash');
+            }
+        }
+
         function takeDamage(t) {
             t.active = false; 
             t.el.remove();
             comboCounter = 0; // Break Regen Combo
             scoreMultiplier = 1; // Break Score Multiplier
             updateComboOverlay();
+            
+            // Educational Reinforcement: Show the player what they MISSED
+            correctButtonFlash(t.catId);
             
             AudioSys.playDamage(); // AUDIO TRIGGER
             
@@ -1807,6 +1873,9 @@
             // Red flash effect
             document.body.style.backgroundColor = '#421111'; 
             setTimeout(() => document.body.style.backgroundColor = '', 100);
+            
+            // Mercy Rule: If hit, delay the next spawn slightly to prevent death spiral
+            scheduleSpawn(spawnDelay + 500);
             
             if(health <= 0) gameOver(t.data);
         }
@@ -1855,6 +1924,9 @@
                 // Spawn Score Popup
                 spawnScorePopup(target.el, points, scoreMultiplier, isPerfect);
                 
+                // New: Spawn Receptor Name Flash (Educational)
+                spawnReceptorFlash(receptorData[catId].name);
+                
                 // Visual Pulse on perfect hit
                 if (isPerfect) {
                      document.body.classList.add('hit-pulse');
@@ -1871,6 +1943,16 @@
             } else {
                 // Miss!
                 AudioSys.playUI('jam'); 
+                
+                // Smart Hint: If player pressed WRONG key, flash the CORRECT key for the closest threat
+                // But only if a threat is actually on screen to be confusing
+                if(activeThreats.length > 0) {
+                     // Find closest threat
+                     let closest = activeThreats[0];
+                     activeThreats.forEach(t => { if(t.y > closest.y) closest = t; });
+                     if(closest.y > 50) correctButtonFlash(closest.catId);
+                }
+                
                 comboCounter = 0; // Break combo
                 updateComboOverlay();
                 scoreMultiplier = 1; // Reset Multiplier
@@ -1880,6 +1962,18 @@
                 setTimeout(() => scoreEl.style.color = '', 100);
                 triggerLockout();
             }
+        }
+        
+        // NEW: Flash receptor name in center for educational reinforcement
+        function spawnReceptorFlash(text) {
+            const exist = document.getElementsByClassName('receptor-flash');
+            while(exist[0]) exist[0].parentNode.removeChild(exist[0]);
+            
+            const div = document.createElement('div');
+            div.className = 'receptor-flash';
+            div.innerText = text.split(" ")[1] ? text.split(" ")[1].toUpperCase() : text.toUpperCase(); // "PACINI", "RUFFINI" etc
+            gameArea.appendChild(div);
+            setTimeout(() => div.remove(), 500);
         }
 
         // NEW: Floating Score Popup
