@@ -1,7 +1,7 @@
 <!-- 
     PROJECT: DermoDefense (Final Master Edition)
     AUTHOR: Ruben Oltean
-    AUDIO: Procedural Audio Engine v2.5 (Juice & Feedback Update)
+    AUDIO: Procedural Audio Engine v2.6 (Cuphead Death Cards & Juice)
     DATE: 2026
 -->
 
@@ -13,7 +13,7 @@
     <title>DermoDefense: Sistem Complet</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&family=Share+Tech+Mono&family=Creepster&display=swap" rel="stylesheet">
     
     <style>
         /* =========================================
@@ -192,7 +192,7 @@
             transition: all 0.5s;
         }
 
-        /* COMBO OVERLAY (VIRAL FEATURE) */
+        /* COMBO OVERLAY */
         #combo-overlay {
             position: fixed;
             top: 50%;
@@ -451,6 +451,47 @@
             30% { transform: translate(-50%, -150%) scale(1.4); opacity: 1; } /* More punch */
             100% { transform: translate(-50%, -250%) scale(1); opacity: 0; }
         }
+
+        /* CUPHEAD DEATH CARD STYLE */
+        .death-card-container {
+            border: 4px solid #333;
+            background: #111;
+            padding: 20px;
+            margin-top: 20px;
+            max-width: 90%;
+            width: 400px;
+            transform: rotate(-2deg);
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .death-card-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+        }
+
+        .death-card-killer {
+            font-family: var(--font-tech);
+            color: var(--accent-red);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .death-card-quote {
+            font-family: 'Exo 2', sans-serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            color: #ddd;
+            line-height: 1.4;
+        }
+
+        .death-card-quote::before { content: "“"; color: #666; font-size: 2rem; vertical-align: middle; }
+        .death-card-quote::after { content: "”"; color: #666; font-size: 2rem; vertical-align: middle; }
+
 
         /* =========================================
            6. CONTROLS PANEL
@@ -969,12 +1010,19 @@
     </div>
 
     <!-- =========================================
-         SCREEN: GAME OVER
+         SCREEN: GAME OVER (MODIFIED FOR CUPHEAD STYLE)
          ========================================= -->
     <div id="game-over" class="overlay" style="display: none;">
         <h1 style="color: var(--accent-red); font-family: var(--font-tech); font-size: 3rem; margin:0; text-shadow: 0 0 15px var(--accent-red);">CEDARE SISTEM</h1>
-        <p id="death-reason" style="color: #cbd5e1; margin: 20px 0; max-width: 80%;">Homeostazie compromisă.</p>
-        <h2 id="final-score" style="color: var(--accent-blue); font-family: var(--font-tech);">SCOR: 0000</h2>
+        
+        <!-- DEATH CARD -->
+        <div class="death-card-container">
+            <div id="death-icon" class="death-card-icon">💀</div>
+            <div id="death-killer" class="death-card-killer">INAMIC NECUNOSCUT</div>
+            <div id="death-quote" class="death-card-quote">"Homeostazie compromisă."</div>
+        </div>
+
+        <h2 id="final-score" style="color: var(--accent-blue); font-family: var(--font-tech); margin-top:20px;">SCOR: 0000</h2>
         <button class="menu-btn btn-primary" onclick="location.reload()" onmouseenter="AudioSys.playUI('hover')" onmousedown="AudioSys.playUI('click')">REINIȚIALIZARE</button>
     </div>
 
@@ -1081,7 +1129,7 @@
     <script>
         /**
          * =========================================================================
-         * AUDIO SYSTEM v2.5 (Juice & Feedback Update)
+         * AUDIO SYSTEM v2.6 (Cuphead Update)
          * Author: Audio Expert & Senior Programmer
          * Description: Generates sound effects in real-time using Web Audio API.
          * =========================================================================
@@ -1378,19 +1426,22 @@
                 this.stopAmbience();
                 const t = this.ctx.currentTime;
                 
+                // Sad trombone-ish effect
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 
-                osc.frequency.setValueAtTime(200, t);
-                osc.frequency.exponentialRampToValueAtTime(10, t + 1.5); // Slow pitch drop
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, t);
+                osc.frequency.linearRampToValueAtTime(100, t + 0.4); 
+                osc.frequency.linearRampToValueAtTime(80, t + 0.8);
                 
                 gain.gain.setValueAtTime(0.3, t);
-                gain.gain.linearRampToValueAtTime(0, t + 1.5);
+                gain.gain.linearRampToValueAtTime(0, t + 0.8);
                 
                 osc.connect(gain);
                 gain.connect(this.masterGain);
                 osc.start(t);
-                osc.stop(t + 1.5);
+                osc.stop(t + 0.8);
             }
         };
 
@@ -1451,32 +1502,32 @@
         const DERM_LIMIT = 0.88; 
         const HYPO_LIMIT = 1.0;
         
-        // --- BESTIARY (ENEMIES) ---
+        // --- BESTIARY (ENEMIES) WITH DEATH QUOTES ---
         const enemies = {
             heat: [ 
-                { name: "Caniculă (UV)", icon: "☀️", speed: 1.5, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm" }, 
-                { name: "Foc Deschis", icon: "🔥", speed: 2.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm" }, 
-                { name: "Apă Clocotită", icon: "♨️", speed: 2.8, dmg: 35, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+                { name: "Caniculă (UV)", icon: "☀️", speed: 1.5, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm", quote: "Soarele te-a ars un pic, \n Ruffini n-a simțit nimic." }, 
+                { name: "Foc Deschis", icon: "🔥", speed: 2.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm", quote: "Flacăra s-a extins rapid, \n Dermul tău e acum lichid." }, 
+                { name: "Apă Clocotită", icon: "♨️", speed: 2.8, dmg: 35, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Opărit și fără vlagă, \n Pielea ta e o mlaștină întreagă." } 
             ],
             cold: [ 
-                { name: "Fulg de Nea", icon: "❄️", speed: 1.8, dmg: 8, limit: EPI_LIMIT, layer: "Epiderm" }, 
-                { name: "Gheață", icon: "🧊", speed: 2.5, dmg: 18, limit: DERM_LIMIT, layer: "Derm" }, 
-                { name: "Azot Lichid", icon: "🥶", speed: 3.2, dmg: 40, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+                { name: "Fulg de Nea", icon: "❄️", speed: 1.8, dmg: 8, limit: EPI_LIMIT, layer: "Epiderm", quote: "Un fulg mic s-a așezat, \n Krause a fost înghețat." }, 
+                { name: "Gheață", icon: "🧊", speed: 2.5, dmg: 18, limit: DERM_LIMIT, layer: "Derm", quote: "Rece, dur și cristalin, \n Ți-am făcut un derm hain." }, 
+                { name: "Azot Lichid", icon: "🥶", speed: 3.2, dmg: 40, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Zero grade absolut, \n Țesutul a dispărut." } 
             ],
             pressure: [ 
-                { name: "Lovitură", icon: "🥊", speed: 2.5, dmg: 15, limit: DERM_LIMIT, layer: "Derm" }, 
-                { name: "Ciocan", icon: "🔨", speed: 2.0, dmg: 30, limit: HYPO_LIMIT, layer: "Hipoderm" }, 
-                { name: "Strivire", icon: "🪨", speed: 1.5, dmg: 50, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+                { name: "Lovitură", icon: "🥊", speed: 2.5, dmg: 15, limit: DERM_LIMIT, layer: "Derm", quote: "Pumnul a lovit din plin, \n Pacini a simțit... puțin." }, 
+                { name: "Ciocan", icon: "🔨", speed: 2.0, dmg: 30, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Vibrații mari, impact brutal, \n Finalul e fenomenal." }, 
+                { name: "Strivire", icon: "🪨", speed: 1.5, dmg: 50, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Greutatea te-a strivit, \n Hipodermul a-mpietrit." } 
             ],
             touch: [ 
-                { name: "Pană", icon: "🪶", speed: 1.5, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm" }, 
-                { name: "Insectă", icon: "🕷️", speed: 3.0, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm" }, 
-                { name: "Vânt", icon: "💨", speed: 2.2, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm" } 
+                { name: "Pană", icon: "🪶", speed: 1.5, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm", quote: "Gâdilat și amuzat, \n Meissner te-a abandonat." }, 
+                { name: "Insectă", icon: "🕷️", speed: 3.0, dmg: 10, limit: EPI_LIMIT, layer: "Epiderm", quote: "Picioare mici pe pielea ta, \n Sistemul nu le detecta." }, 
+                { name: "Vânt", icon: "💨", speed: 2.2, dmg: 5, limit: EPI_LIMIT, layer: "Epiderm", quote: "O briză rece a trecut, \n Atingerea nu ți-a plăcut." } 
             ],
             pain: [ 
-                { name: "Ac", icon: "🪡", speed: 2.0, dmg: 15, limit: DERM_LIMIT, layer: "Derm Papilar" }, 
-                { name: "Înțepătură", icon: "🐝", speed: 3.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm Reticular" }, 
-                { name: "Cuțit", icon: "🔪", speed: 3.8, dmg: 45, limit: HYPO_LIMIT, layer: "Hipoderm" } 
+                { name: "Ac", icon: "🪡", speed: 2.0, dmg: 15, limit: DERM_LIMIT, layer: "Derm Papilar", quote: "Un vârf ascuțit și fin, \n Ți-a adus un mare chin." }, 
+                { name: "Înțepătură", icon: "🐝", speed: 3.2, dmg: 20, limit: DERM_LIMIT, layer: "Derm Reticular", quote: "Veninul s-a infiltrat, \n Nociceptorii-au abdicat." }, 
+                { name: "Cuțit", icon: "🔪", speed: 3.8, dmg: 45, limit: HYPO_LIMIT, layer: "Hipoderm", quote: "Lama rece a tăiat, \n Jocul s-a terminat." } 
             ]
         };
 
@@ -1757,7 +1808,7 @@
             document.body.style.backgroundColor = '#421111'; 
             setTimeout(() => document.body.style.backgroundColor = '', 100);
             
-            if(health <= 0) gameOver(t.data.name + " a distrus bariera: " + t.data.layer);
+            if(health <= 0) gameOver(t.data);
         }
 
         function handleInput(catId) {
@@ -1945,7 +1996,7 @@
             healthFill.style.boxShadow = `0 0 10px ${pct > 60 ? '#4ade80' : (pct>30?'#facc15':'#ef4444')}`;
         }
 
-        function gameOver(reason) {
+        function gameOver(killerData) {
             isPlaying = false; 
             clearTimeout(spawnTimer); 
             cancelAnimationFrame(animFrameId);
@@ -1955,9 +2006,14 @@
             const currentHigh = parseInt(localStorage.getItem('dermoHighScore') || 0);
             if(score > currentHigh) localStorage.setItem('dermoHighScore', score);
             
+            // CUPHEAD DEATH CARD LOGIC
             document.getElementById('game-over').style.display = 'flex';
             document.getElementById('final-score').innerText = "SCOR: " + score.toString().padStart(4, '0');
-            document.getElementById('death-reason').innerText = reason;
+            
+            // Fill Killer Info
+            document.getElementById('death-icon').innerText = killerData.icon;
+            document.getElementById('death-killer').innerText = killerData.name;
+            document.getElementById('death-quote').innerText = killerData.quote || "Homeostazie compromisă.";
             
             activeThreats.forEach(t => t.el.remove()); 
             activeThreats = [];
