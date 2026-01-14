@@ -1,7 +1,7 @@
 <!-- 
     PROJECT: DermoDefense (Final Master Edition)
     AUTHOR: Ruben Oltean
-    AUDIO: Procedural Audio Engine v2.4 (Combo Logic & Persistence)
+    AUDIO: Procedural Audio Engine v2.5 (Juice & Feedback Update)
     DATE: 2026
 -->
 
@@ -29,6 +29,7 @@
             --accent-green: #4ade80;
             --accent-red: #ef4444;
             --accent-gold: #f59e0b;
+            --accent-perfect: #d946ef; /* Magenta for Perfect Hits */
             
             /* Typography */
             --text-main: #f1f5f9;
@@ -45,6 +46,7 @@
             --accent-green: #00ff00;
             --accent-red: #00ff00;
             --accent-gold: #00ff00;
+            --accent-perfect: #fff;
             --text-main: #00ff00;
         }
 
@@ -64,11 +66,40 @@
             color: var(--text-main);
             font-family: var(--font-main);
             height: 100vh;
-            height: 100dvh; /* Dynamic Viewport for Safari Mobile */
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transition: all 0.5s;
+            transition: background-color 0.1s;
+        }
+
+        /* GAME JUICE ANIMATIONS */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .screen-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes pulse-white {
+            0% { box-shadow: inset 0 0 0 rgba(255,255,255,0); }
+            50% { box-shadow: inset 0 0 50px rgba(255,255,255,0.2); }
+            100% { box-shadow: inset 0 0 0 rgba(255,255,255,0); }
+        }
+
+        .hit-pulse {
+            animation: pulse-white 0.2s linear;
         }
 
         /* =========================================
@@ -161,11 +192,35 @@
             transition: all 0.5s;
         }
 
+        /* COMBO OVERLAY (VIRAL FEATURE) */
+        #combo-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-tech);
+            font-size: 10rem;
+            color: rgba(255, 255, 255, 0.05);
+            z-index: 4;
+            pointer-events: none;
+            font-weight: 900;
+            transition: all 0.1s;
+        }
+        
+        .combo-active {
+            animation: beat 0.3s ease-out;
+            color: rgba(56, 189, 248, 0.15) !important;
+        }
+
+        @keyframes beat {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
         #hud {
-            /* FIXED: Safari UI Sizing for Notch */
             height: calc(70px + env(safe-area-inset-top)); 
             padding-top: env(safe-area-inset-top);
-            
             background: rgba(8, 12, 24, 0.98);
             border-bottom: 2px solid var(--ui-border);
             display: flex; 
@@ -393,7 +448,7 @@
         
         @keyframes floatUp {
             0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
-            50% { transform: translate(-50%, -150%) scale(1.2); opacity: 1; }
+            30% { transform: translate(-50%, -150%) scale(1.4); opacity: 1; } /* More punch */
             100% { transform: translate(-50%, -250%) scale(1); opacity: 0; }
         }
 
@@ -401,7 +456,6 @@
            6. CONTROLS PANEL
            ========================================= */
         #controls {
-            /* FIXED: Safari Bottom Bar Support */
             height: 35vh; 
             background: rgba(11, 17, 32, 0.98);
             display: grid; 
@@ -863,6 +917,9 @@
     <div id="watermark">Realizat cu pasiune pentru biologie de Ruben Oltean</div>
     <div id="toast">NOTIFICARE</div>
     <div id="heal-text">+15 REGENERARE</div>
+    
+    <!-- COMBO COUNTER (VIRAL FEATURE) -->
+    <div id="combo-overlay"></div>
 
     <!-- =========================================
          SCREEN: MAIN MENU / START
@@ -1024,7 +1081,7 @@
     <script>
         /**
          * =========================================================================
-         * AUDIO SYSTEM v2.4 (Procedural Synthesis + Combo Logic)
+         * AUDIO SYSTEM v2.5 (Juice & Feedback Update)
          * Author: Audio Expert & Senior Programmer
          * Description: Generates sound effects in real-time using Web Audio API.
          * =========================================================================
@@ -1220,7 +1277,7 @@
             },
 
             // 5. GAMEPLAY: SHOOTING (Synapse Fire)
-            playShoot: function(type) {
+            playShoot: function(type, isPerfect = false) {
                 if(!this.ctx) return;
                 const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
@@ -1245,11 +1302,17 @@
                 if(type === 'pressure') { startFreq=400; endFreq=50; wave='sine'; duration=0.25; }
                 if(type === 'cold') { startFreq=1500; endFreq=1200; wave='sine'; } // High chime
 
+                if (isPerfect) {
+                    startFreq *= 1.5; // Higher pitch for perfect
+                    wave = 'sawtooth'; // Sharper sound
+                    duration = 0.2;
+                }
+
                 osc.type = wave;
                 osc.frequency.setValueAtTime(startFreq, t);
                 osc.frequency.exponentialRampToValueAtTime(endFreq, t + duration);
                 
-                gain.gain.setValueAtTime(0.2, t);
+                gain.gain.setValueAtTime(isPerfect ? 0.3 : 0.2, t);
                 gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
 
                 osc.start(t);
@@ -1446,6 +1509,7 @@
         const watermark = document.getElementById('watermark');
         const toast = document.getElementById('toast');
         const healText = document.getElementById('heal-text');
+        const comboOverlay = document.getElementById('combo-overlay');
         
         // Load High Score
         document.getElementById('high-score-display').innerText = (localStorage.getItem('dermoHighScore') || 0).toString().padStart(4, '0');
@@ -1584,6 +1648,7 @@
             comboCounter = 0; 
             scoreMultiplier = 1; // Reset Multiplier
             scoreEl.style.color = 'var(--accent-blue)';
+            updateComboOverlay();
             
             updateHealthBar();
             requestAnimationFrame(gameLoop); 
@@ -1675,9 +1740,14 @@
             t.el.remove();
             comboCounter = 0; // Break Regen Combo
             scoreMultiplier = 1; // Break Score Multiplier
+            updateComboOverlay();
             
             AudioSys.playDamage(); // AUDIO TRIGGER
             
+            // JUICE: Screen Shake
+            document.body.classList.add('screen-shake');
+            setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+
             if(!godMode) { 
                 health -= t.data.dmg; 
                 updateHealthBar(); 
@@ -1692,14 +1762,19 @@
 
         function handleInput(catId) {
             if(!isPlaying || isPaused || inputLockout) return;
-            
+            const gameH = gameArea.clientHeight;
             const relevant = activeThreats.filter(t => t.active && t.catId === catId);
             
             if(relevant.length > 0) {
-                // Hit!
-                AudioSys.playShoot(catId); 
                 relevant.sort((a,b) => b.y - a.y); 
                 const target = relevant[0];
+                
+                // --- TIMING LOGIC (JUICE UPDATE) ---
+                const limitY = gameH * target.data.limit;
+                // If within 80px of the limit, it's a PERFECT hit
+                const isPerfect = (limitY - target.y) < 80;
+
+                AudioSys.playShoot(catId, isPerfect); 
                 
                 // Increase Multiplier
                 scoreMultiplier = Math.min(5, scoreMultiplier + 1);
@@ -1709,18 +1784,36 @@
                 target.active = false; 
                 target.el.remove();
                 
+                // JUICE: Hit Stop (Freeze frame for impact)
+                if(isPerfect) {
+                    // Slight freeze
+                    const now = performance.now();
+                    while (performance.now() - now < 8) { /* busy wait for micro-stutter */ }
+                }
+
                 setTimeout(() => AudioSys.playKill(), 50); 
 
                 // Calculate Score
-                const points = Math.floor(100 * target.data.speed) * scoreMultiplier;
+                let basePoints = Math.floor(100 * target.data.speed);
+                if (isPerfect) basePoints *= 2; // Perfect Bonus
+                const points = basePoints * scoreMultiplier;
+                
                 score += points; 
                 scoreEl.innerText = score.toString().padStart(4, '0');
 
                 // Spawn Score Popup
-                spawnScorePopup(target.el, points, scoreMultiplier);
+                spawnScorePopup(target.el, points, scoreMultiplier, isPerfect);
                 
+                // Visual Pulse on perfect hit
+                if (isPerfect) {
+                     document.body.classList.add('hit-pulse');
+                     setTimeout(() => document.body.classList.remove('hit-pulse'), 200);
+                }
+
                 // REGEN COMBO
                 comboCounter++;
+                updateComboOverlay();
+
                 if(comboCounter >= 10) healPlayer();
 
                 updateDifficulty();
@@ -1728,6 +1821,7 @@
                 // Miss!
                 AudioSys.playUI('jam'); 
                 comboCounter = 0; // Break combo
+                updateComboOverlay();
                 scoreMultiplier = 1; // Reset Multiplier
                 score = Math.max(0, score - 50); 
                 scoreEl.innerText = score.toString().padStart(4, '0');
@@ -1738,7 +1832,7 @@
         }
 
         // NEW: Floating Score Popup
-        function spawnScorePopup(targetEl, points, mult) {
+        function spawnScorePopup(targetEl, points, mult, isPerfect) {
             const popup = document.createElement('div');
             popup.className = 'score-popup';
             popup.style.left = targetEl.style.left;
@@ -1746,20 +1840,44 @@
             
             // Text logic
             let text = `+${points}`;
-            if(mult > 1) text += ` x${mult}`;
+            if(isPerfect) text = "PERFECT " + text;
+            else if(mult > 1) text += ` x${mult}`;
             popup.innerText = text;
 
             // Color logic based on multiplier
-            if(mult === 5) popup.style.color = '#facc15'; // Gold
-            else if(mult >= 3) popup.style.color = '#38bdf8'; // Blue
-            else popup.style.color = '#fff';
+            if(isPerfect) {
+                popup.style.color = 'var(--accent-perfect)';
+                popup.style.fontSize = '1.5rem';
+                popup.style.textShadow = '0 0 10px var(--accent-perfect)';
+            } else if(mult === 5) {
+                popup.style.color = '#facc15'; // Gold
+            } else if(mult >= 3) {
+                popup.style.color = '#38bdf8'; // Blue
+            } else {
+                popup.style.color = '#fff';
+            }
 
             gameArea.appendChild(popup);
             setTimeout(() => popup.remove(), 800);
         }
         
+        // NEW: Combo Overlay Update
+        function updateComboOverlay() {
+            if(comboCounter > 5) {
+                comboOverlay.innerText = comboCounter;
+                comboOverlay.style.opacity = '0.3';
+                // Trigger reflow to restart animation
+                comboOverlay.classList.remove('combo-active');
+                void comboOverlay.offsetWidth; 
+                comboOverlay.classList.add('combo-active');
+            } else {
+                comboOverlay.style.opacity = '0';
+            }
+        }
+        
         function healPlayer() {
             comboCounter = 0; // Reset
+            updateComboOverlay();
             if (health < 100 && !godMode) {
                 health = Math.min(100, health + 15);
                 updateHealthBar();
